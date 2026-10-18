@@ -27,6 +27,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -54,8 +55,11 @@ class HeadsOfGovernments_Sqlite_Test {
                 head_title TEXT NOT NULL,
                 numbering  TEXT NOT NULL
             ) WITHOUT ROWID""",
+            // id is the rowid, so SQLite assigns it; the generator inserts by country then term_start, so it is
+            // 1..N in that order. No uniqueness is declared on (country, term_start); generate() checks it instead.
             """
             CREATE TABLE head (
+                id         INTEGER PRIMARY KEY,
                 country    TEXT    NOT NULL REFERENCES government (country),
                 number     INTEGER NOT NULL,
                 term_start TEXT    NOT NULL,
@@ -64,14 +68,11 @@ class HeadsOfGovernments_Sqlite_Test {
                 party      TEXT    NOT NULL,
                 born       INTEGER NOT NULL,
                 died       INTEGER,
-                PRIMARY KEY (country, term_start),
                 CHECK (term_end IS NULL OR term_end >= term_start),
                 CHECK (died IS NULL OR died >= born)
-            ) WITHOUT ROWID""",
+            )""",
             "CREATE INDEX idx_head_country_number ON head (country, number)",
-            "CREATE INDEX idx_head_name ON head (name)",
-            // a government has at most one sitting head; also makes the incumbents a four-entry lookup
-            "CREATE UNIQUE INDEX uq_head_incumbent ON head (country) WHERE term_end IS NULL"
+            "CREATE INDEX idx_head_name ON head (name)"
     );
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -160,6 +161,8 @@ class HeadsOfGovernments_Sqlite_Test {
                         throw new java.io.UncheckedIOException(ioe);
                     }
                 })
+                // insertion order is id order; make it country, then term_start, so a run is reproducible
+                .sorted(Comparator.comparing(Head::country).thenComparing(Head::termStart))
                 .toList();
         // start from an empty file, so the result holds nothing but this run
         Files.createDirectories(PATH.getParent());
@@ -187,14 +190,18 @@ class HeadsOfGovernments_Sqlite_Test {
                 assertThat(count(connection, "SELECT COUNT(*) FROM head WHERE country = '" + e.getKey() + "'"))
                         .as(e.getKey()).isEqualTo(e.getValue());
             }
+            assertThat(count(connection, "SELECT MIN(id) FROM head")).as("first id").isOne();
+            assertThat(count(connection, "SELECT MAX(id) FROM head")).as("last id").isEqualTo(heads.size());
+            assertThat(count(connection, "SELECT COUNT(*) FROM (SELECT country, term_start FROM head GROUP BY 1, 2 HAVING COUNT(*) > 1)"))
+                    .as("(country, term_start) duplicates").isZero();
             assertThat(count(connection, "SELECT COUNT(*) FROM head WHERE term_end IS NULL"))
                     .as("incumbents").isEqualTo(5);
             assertThat(count(connection, "SELECT COUNT(*) FROM head WHERE country NOT IN (SELECT country FROM government)"))
                     .as("orphans").isZero();
             assertThat(count(connection, "SELECT COUNT(*) FROM pragma_foreign_key_check")).as("foreign_key_check rows").isZero();
             assertThat(count(connection, "SELECT COUNT(*) FROM sqlite_stat1")).as("ANALYZE ran").isPositive();
-            assertThat(count(connection, "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name = 'uq_head_incumbent'"))
-                    .as("uq_head_incumbent exists").isOne();
+            assertThat(count(connection, "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name LIKE 'idx_head_%'"))
+                    .as("indexes").isEqualTo(2);
         }
         // the last word: compact the file, and leave it with no free page
         try (var connection = DriverManager.getConnection(url())) {

@@ -15,6 +15,7 @@ CREATE TABLE government
 ) WITHOUT ROWID;
 CREATE TABLE head
 (
+    id         INTEGER PRIMARY KEY,
     country    TEXT    NOT NULL REFERENCES government (country),
     number     INTEGER NOT NULL,
     term_start TEXT    NOT NULL,
@@ -23,13 +24,11 @@ CREATE TABLE head
     party      TEXT    NOT NULL,
     born       INTEGER NOT NULL,
     died       INTEGER,
-    PRIMARY KEY (country, term_start),
     CHECK (term_end IS NULL OR term_end >= term_start),
     CHECK (died IS NULL OR died >= born)
-) WITHOUT ROWID;
+);
 CREATE INDEX idx_head_country_number ON head (country, number);
 CREATE INDEX idx_head_name ON head (name);
-CREATE UNIQUE INDEX uq_head_incumbent ON head (country) WHERE term_end IS NULL;
 ```
 
 ## `government`
@@ -46,11 +45,16 @@ which is permanent and has one head at a time. One row per country.
 
 ## `head`
 
-One term of a head of government. The key is `(country, term_start)` because `number` is not unique
-within a country everywhere: France and the United Kingdom keep a person's number across terms.
+One term of a head of government. `id` is the key, a surrogate: it is the rowid, assigned by SQLite
+as the generator inserts, and the file is regenerated from scratch on every run, so an `id` is not
+stable across runs and means nothing outside the file it is in. What identifies a term in practice
+is `(country, term_start)`; the generator checks that no pair repeats, but the schema declares no
+constraint on it. `number` is not unique within a country everywhere: France and the United Kingdom
+keep a person's number across terms.
 
 | name         | description                                   | notes                                        |
 |--------------|-----------------------------------------------|----------------------------------------------|
+| `id`         | the row's key                                 | rowid; 1..285 by `country`, then `term_start`, in this run |
 | `country`    | the government's country                      | references `government`                      |
 | `number`     | the term number                               | counted as `government.numbering` says       |
 | `term_start` | the first day of the term                     | ISO-8601 date, `yyyy-MM-dd`                  |
@@ -60,8 +64,9 @@ within a country everywhere: France and the United Kingdom keep a person's numbe
 | `born`       | the year of birth                             |                                              |
 | `died`       | the year of death                             | `NULL` while living                          |
 
-`uq_head_incumbent` is a unique partial index: a government has at most one sitting head, and
-`WHERE term_end IS NULL` is answered from the index.
+The schema declares no uniqueness beyond `id`, by decision: the file is built for its readers, and
+the generator checks the data once, at build time, that every `(country, term_start)` is distinct and
+that each government has exactly one row with `term_end IS NULL`.
 
 The dates are text, SQLite's own convention, so `WHERE term_start <= '1990-01-01' AND (term_end IS NULL OR term_end >= '1990-01-01')`
 finds who held office on a day, and `date()` / `julianday()` work on them directly.

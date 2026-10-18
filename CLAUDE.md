@@ -69,22 +69,27 @@ the `.txt` in the build, as the `.asv` and the database are.
 
 ## The schema
 
-Two tables, `government` and `head`, both `WITHOUT ROWID`. The DDL lives in
+Two tables, `government` (`WITHOUT ROWID`) and `head` (a rowid table). The DDL lives in
 `HeadsOfGovernments_Sqlite_Test.DDL` and is repeated in `db/heads_of_governments.sqlite3.md`; **a
 change to one is a change to both.**
 
 - `government` is a government in the institutional sense -- the Government of Japan, HM Government
   -- not an administration. Key `country`, ISO 3166-1 alpha-2 as `Locale.getCountry()` returns it:
   the United Kingdom is `GB`. `head_kind` is `PRESIDENT` or `PRIME_MINISTER`, checked.
-- `head` is one term of office. Key `(country, term_start)`, not `(country, number)`: France and the
-  United Kingdom keep a person's number across terms, so `number` repeats. Dates are
+- `head` is one term of office. Key `id INTEGER PRIMARY KEY`, the rowid, which SQLite assigns as the
+  generator inserts; the generator sorts by `country` then `term_start` first, so ids are 1..N in that
+  order, but the file is rebuilt on every run and an `id` is never stable. What tells terms apart is
+  `(country, term_start)`, not `(country, number)`: France and the United Kingdom keep a person's
+  number across terms, so `number` repeats. The schema declares no unique constraint on
+  `(country, term_start)`, by decision; the generator asserts it after the inserts instead. Dates are
   ISO-8601 text, SQLite's convention. `term_end IS NULL` is the incumbent.
-- Indexes: `(country, number)`, `(name)`, and `uq_head_incumbent`, a unique partial index on
-  `country WHERE term_end IS NULL` that enforces one sitting head per government.
+- Indexes: `(country, number)` and `(name)`, both plain. There is no unique index on the incumbent,
+  by decision: the schema is for consumers, and the generator asserts one incumbent per government
+  after the inserts instead.
 
 Names are country codes and snake_case; keep them so. If a country ever contributes a second office
 (South Korea has a prime minister too), the key of `government` becomes `(country, head_kind)` and
-`head` references both columns; until then the simple key stays.
+`head` references both columns; `id` is unaffected.
 
 ## Build
 

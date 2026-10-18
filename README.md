@@ -24,7 +24,7 @@ how you get it. It needs a JDK 25 or newer.
 | table        | rows | one row is                                                               |
 |--------------|-----:|--------------------------------------------------------------------------|
 | `government` |    5 | a government in the institutional sense, keyed by ISO 3166-1 alpha-2 code |
-| `head`       |  285 | one term of office, keyed by `(country, term_start)`                      |
+| `head`       |  285 | one term of office, keyed by a surrogate `id`                               |
 
 ```sql
 CREATE TABLE government
@@ -37,6 +37,7 @@ CREATE TABLE government
 
 CREATE TABLE head
 (
+    id         INTEGER PRIMARY KEY,                                         -- rowid; regenerated each run
     country    TEXT    NOT NULL REFERENCES government (country),
     number     INTEGER NOT NULL,
     term_start TEXT    NOT NULL,                                            -- yyyy-MM-dd
@@ -45,20 +46,22 @@ CREATE TABLE head
     party      TEXT    NOT NULL,                                            -- '/' separates successive parties
     born       INTEGER NOT NULL,
     died       INTEGER,                                                     -- NULL while living
-    PRIMARY KEY (country, term_start),
     CHECK (term_end IS NULL OR term_end >= term_start),
     CHECK (died IS NULL OR died >= born)
-) WITHOUT ROWID;
+);
 
 CREATE INDEX idx_head_country_number ON head (country, number);
 CREATE INDEX idx_head_name ON head (name);
-CREATE UNIQUE INDEX uq_head_incumbent ON head (country) WHERE term_end IS NULL;
 ```
 
-`number` is not the key because it means something different in each country -- Japan counts
-appointments, South Korea elections, the United States presidencies, France and the United Kingdom
-persons -- and the last two repeat it across a person's terms. `government.numbering`
-spells out each country's rule. The unique partial index enforces one sitting head per government.
+A term is told apart by `(country, term_start)`; the generator checks that no pair repeats, though
+the schema declares no constraint on it. `number` could not serve, because it means something
+different in each country -- Japan counts appointments, South Korea elections, the United States
+presidencies, France and the United Kingdom persons -- and the last two repeat it across a person's
+terms. `government.numbering` spells out each country's rule. `id` is the rowid, numbered by country
+and then by date as the generator inserts; the file is rebuilt on every run, so do not store an `id`
+anywhere outside the file. The schema declares no uniqueness beyond `id`; the generator checks the
+data once, at build time.
 Dates are text, SQLite's own convention, so this finds who held office on a day:
 
 ```sql
