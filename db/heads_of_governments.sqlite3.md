@@ -39,7 +39,7 @@ which is permanent and has one head at a time. One row per country.
 
 | name         | description                                                     | notes                              |
 |--------------|-----------------------------------------------------------------|------------------------------------|
-| `country`    | ISO 3166-1 alpha-2 code, as `java.util.Locale#getCountry()`     | `GB`, `JP`, `KR`, `US`             |
+| `country`    | ISO 3166-1 alpha-2 code, as `java.util.Locale#getCountry()`     | `FR`, `GB`, `JP`, `KR`, `US`       |
 | `head_kind`  | what the head of this government is                             | `PRESIDENT` or `PRIME_MINISTER`    |
 | `head_title` | the head's title in the country's own language                  | e.g. `内閣総理大臣`                  |
 | `numbering`  | what `head.number` counts for this country                      | free text                          |
@@ -47,7 +47,7 @@ which is permanent and has one head at a time. One row per country.
 ## `head`
 
 One term of a head of government. The key is `(country, term_start)` because `number` is not unique
-within a country everywhere: the United Kingdom keeps a person's number across non-consecutive terms.
+within a country everywhere: France and the United Kingdom keep a person's number across terms.
 
 | name         | description                                   | notes                                        |
 |--------------|-----------------------------------------------|----------------------------------------------|

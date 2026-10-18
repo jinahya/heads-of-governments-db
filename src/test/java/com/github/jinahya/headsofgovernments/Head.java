@@ -42,6 +42,7 @@ record Head(String country, int number, LocalDate termStart, LocalDate termEnd, 
 
     /** The names of the resources holding each country's heads, in ASCII separated values, by country. */
     static final Map<String, String> RESOURCE_NAMES = Map.of(
+            "FR", "list_of_presidents_of_france.asv",
             "GB", "list_of_prime_ministers_of_the_united_kingdom.asv",
             "JP", "list_of_presidents_of_japan.asv",
             "KR", "list_of_presidents_of_south_korea.asv",

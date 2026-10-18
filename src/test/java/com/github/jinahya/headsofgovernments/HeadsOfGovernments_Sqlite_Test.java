@@ -181,14 +181,14 @@ class HeadsOfGovernments_Sqlite_Test {
         }
         // reopen and check
         try (var connection = DriverManager.getConnection(url())) {
-            assertThat(count(connection, "SELECT COUNT(*) FROM government")).isEqualTo(4);
-            assertThat(count(connection, "SELECT COUNT(*) FROM head")).isEqualTo(heads.size()).isEqualTo(254);
-            for (final var e : Map.of("GB", 81, "JP", 105, "KR", 21, "US", 47).entrySet()) {
+            assertThat(count(connection, "SELECT COUNT(*) FROM government")).isEqualTo(5);
+            assertThat(count(connection, "SELECT COUNT(*) FROM head")).isEqualTo(heads.size()).isEqualTo(285);
+            for (final var e : Map.of("FR", 31, "GB", 81, "JP", 105, "KR", 21, "US", 47).entrySet()) {
                 assertThat(count(connection, "SELECT COUNT(*) FROM head WHERE country = '" + e.getKey() + "'"))
                         .as(e.getKey()).isEqualTo(e.getValue());
             }
             assertThat(count(connection, "SELECT COUNT(*) FROM head WHERE term_end IS NULL"))
-                    .as("incumbents").isEqualTo(4);
+                    .as("incumbents").isEqualTo(5);
             assertThat(count(connection, "SELECT COUNT(*) FROM head WHERE country NOT IN (SELECT country FROM government)"))
                     .as("orphans").isZero();
             assertThat(count(connection, "SELECT COUNT(*) FROM pragma_foreign_key_check")).as("foreign_key_check rows").isZero();

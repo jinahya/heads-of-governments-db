@@ -1,0 +1,31 @@
+1|1848-12-20|1852-12-02|Louis-Napoléon Bonaparte|Bonapartiste|1808|1873
+2|1871-08-31|1873-05-24|Adolphe Thiers|Orléaniste/Républicain_opportuniste|1797|1877
+3|1873-05-24|1879-01-30|Patrice de MacMahon|Légitimiste|1808|1893
+4|1879-01-30|1886-01-30|Jules Grévy|Républicain_opportuniste|1807|1891
+4|1886-01-30|1887-12-02|Jules Grévy|Républicain_opportuniste|1807|1891
+5|1887-12-03|1894-06-25|Sadi Carnot|Républicain_opportuniste|1837|1894
+6|1894-06-27|1895-01-16|Jean Casimir-Perier|Républicain_opportuniste|1847|1907
+7|1895-01-17|1899-02-16|Félix Faure|Républicain_opportuniste/Républicain_progressiste|1841|1899
+8|1899-02-18|1906-02-18|Émile Loubet|Alliance_républicaine_démocratique|1838|1929
+9|1906-02-18|1913-02-18|Armand Fallières|Alliance_républicaine_démocratique|1841|1931
+10|1913-02-18|1920-02-18|Raymond Poincaré|Alliance_républicaine_démocratique|1860|1934
+11|1920-02-18|1920-09-21|Paul Deschanel|Alliance_républicaine_démocratique|1855|1922
+12|1920-09-23|1924-06-11|Alexandre Millerand|Indépendant|1859|1943
+13|1924-06-13|1931-06-13|Gaston Doumergue|Parti_radical|1863|1937
+14|1931-06-13|1932-05-07|Paul Doumer|Indépendant|1857|1932
+15|1932-05-10|1939-05-10|Albert Lebrun|Alliance_démocratique|1871|1950
+15|1939-05-10|1940-07-11|Albert Lebrun|Alliance_démocratique|1871|1950
+16|1947-01-16|1954-01-16|Vincent Auriol|SFIO|1884|1966
+17|1954-01-16|1959-01-08|René Coty|CNIP|1882|1962
+18|1959-01-08|1966-01-08|Charles de Gaulle|UNR|1890|1970
+18|1966-01-08|1969-04-28|Charles de Gaulle|UNR/UDR|1890|1970
+19|1969-06-20|1974-04-02|Georges Pompidou|UDR|1911|1974
+20|1974-05-27|1981-05-21|Valéry Giscard d'Estaing|RI/UDF|1926|2020
+21|1981-05-21|1988-05-21|François Mitterrand|PS|1916|1996
+21|1988-05-21|1995-05-17|François Mitterrand|PS|1916|1996
+22|1995-05-17|2002-05-17|Jacques Chirac|RPR|1932|2019
+22|2002-05-17|2007-05-16|Jacques Chirac|RPR/UMP|1932|2019
+23|2007-05-16|2012-05-15|Nicolas Sarkozy|UMP|1955|-
+24|2012-05-15|2017-05-14|François Hollande|PS|1954|-
+25|2017-05-14|2022-05-14|Emmanuel Macron|LREM|1977|-
+25|2022-05-14|-|Emmanuel Macron|LREM/Renaissance|1977|-

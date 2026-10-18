@@ -29,9 +29,14 @@ import java.util.stream.Collectors;
 
 /**
  * Reads ASCII separated values: {@code US} ({@code 0x1F}) between fields, {@code RS} ({@code 0x1E}) between records,
- * nothing before the first record and nothing after the last. Every {@code .asv} under {@code src/test/resources} is
- * the flattened form of the {@code .txt} of the same name, produced by {@link #flatten(List)}: comment lines and blank
- * lines dropped, each {@code TAB} replaced with {@code US}, and the lines joined with {@code RS}.
+ * nothing before the first record and nothing after the last. Every {@code .asv} under {@code src/main/resources} is
+ * the flattened form of the {@code .txt} of the same name, produced by {@link #flatten(List)}: blank lines dropped,
+ * each {@value #DELIMITER} replaced with {@code US}, and the lines joined with {@code RS}. The lists carry no comments
+ * and no header row; what their columns mean is written in {@code README.md}.
+ *
+ * <p>The conversion is mechanical because the lists keep three promises: the delimiter never occurs inside a field,
+ * a record is one line, and every record has the same number of fields. {@link #flatten(List, char, String, int)} is
+ * the general form, for any single-character delimiter that keeps the same promises.</p>
  */
 final class _Asv {
 
@@ -40,6 +45,9 @@ final class _Asv {
 
     /** The unit (field) separator. */
     static final char US = '\u001F';
+
+    /** The field delimiter of the {@code .txt} lists. */
+    static final char DELIMITER = '|';
 
     private static final Pattern RS_PATTERN = Pattern.compile(Pattern.quote(String.valueOf(RS)));
 
@@ -92,18 +100,49 @@ final class _Asv {
     }
 
     /**
-     * Flattens the lines of a {@code .txt} list into ASCII separated values: lines that are empty or start with
-     * {@code '#'} are dropped, each {@code TAB} becomes {@code US}, and the remaining lines are joined with {@code RS}.
+     * Flattens the lines of a delimited list into ASCII separated values: lines that are empty or start with the
+     * comment prefix are dropped, each delimiter becomes {@code US}, and the remaining lines are joined with
+     * {@code RS}.
+     *
+     * @param lines     the lines of the list.
+     * @param delimiter the field delimiter; must not occur inside a field, and must not be {@code US} or {@code RS}.
+     * @param comment   the prefix of a comment line; {@code null} or empty when the list has no comments.
+     * @param fields    the number of fields of every record, or a non-positive value not to check it.
+     * @return the flattened text.
+     * @throws IllegalArgumentException if a record does not have {@code fields} fields.
+     */
+    static String flatten(final List<String> lines, final char delimiter, final String comment, final int fields) {
+        Objects.requireNonNull(lines, "lines is null");
+        if (delimiter == US || delimiter == RS) {
+            throw new IllegalArgumentException("delimiter is a separator: 0x" + Integer.toHexString(delimiter));
+        }
+        final var records = lines.stream()
+                .filter(line -> !line.isEmpty() && (comment == null || comment.isEmpty() || !line.startsWith(comment)))
+                .toList();
+        if (fields > 0) {
+            for (final var record : records) {
+                final var count = record.chars().filter(c -> c == delimiter).count() + 1;
+                if (count != fields) {
+                    throw new IllegalArgumentException(
+                            "expected " + fields + " fields, got " + count + " in record: " + record);
+                }
+            }
+        }
+        return records.stream()
+                .map(record -> record.replace(delimiter, US))
+                .collect(Collectors.joining(String.valueOf(RS)));
+    }
+
+    /**
+     * Flattens the lines of a {@code .txt} list of this project: delimited by {@value #DELIMITER}, no comments, the
+     * number of fields unchecked.
      *
      * @param lines the lines of the list.
      * @return the flattened text.
+     * @see #flatten(List, char, String, int)
      */
     static String flatten(final List<String> lines) {
-        Objects.requireNonNull(lines, "lines is null");
-        return lines.stream()
-                .filter(line -> !line.isEmpty() && line.charAt(0) != '#')
-                .map(line -> line.replace('\t', US))
-                .collect(Collectors.joining(String.valueOf(RS)));
+        return flatten(lines, DELIMITER, null, 0);
     }
 
     /**
