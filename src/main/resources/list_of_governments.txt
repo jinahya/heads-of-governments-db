@@ -1,0 +1,32 @@
+# https://www.iso.org/iso-3166-country-codes.html
+# https://en.wikipedia.org/wiki/Head_of_government
+# https://en.wikipedia.org/wiki/Head_of_state
+#
+# One government per line, in the institutional sense: the Government of Japan, HM Government,
+# 대한민국 정부, the executive of the state, which is permanent and has one head at a time. Not an
+# administration, which changes with each head. Columns are separated by a single TAB. The
+# header row just above the data names the columns and is commented out like every other
+# non-data line.
+#
+#   country     ISO 3166-1 alpha-2 code, as java.util.Locale#getCountry() returns it; the
+#               United Kingdom is 'GB', not 'UK'
+#   head_kind   what the head of this government is: PRESIDENT or PRIME_MINISTER
+#   head_title  the head's title in the country's own language; may contain spaces
+#   numbering   what the 'number' column of the heads list counts for this country; free text,
+#               may contain spaces
+#
+# Lines starting with '#' and blank lines are comments.
+#
+# Parsing with java.util.Scanner, delimited by TAB because 'head_title' and 'numbering' contain spaces:
+#
+#   var s = new Scanner(line).useDelimiter("\t");
+#   String country = s.next();
+#   String headKind = s.next();
+#   String headTitle = s.next();
+#   String numbering = s.next();
+#
+#country	head_kind	head_title	numbering
+GB	PRIME_MINISTER	Prime Minister	ordinal of the person by first appointment; a person who served non-consecutive terms has one line per term and keeps the same number on each
+JP	PRIME_MINISTER	内閣総理大臣	代, one per appointment; a cabinet re-formed after a general election starts a new 代, so a person keeps one line per 代 with a new number on each
+KR	PRESIDENT	대통령	대, one per election; a person re-elected keeps one line per term with consecutive numbers
+US	PRESIDENT	President	presidency number, one per non-consecutive presidency; a person returning after an absence gets a new number

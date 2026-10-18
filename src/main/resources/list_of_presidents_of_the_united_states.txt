@@ -1,0 +1,74 @@
+# https://en.wikipedia.org/wiki/List_of_presidents_of_the_United_States
+# https://georgewbush-whitehouse.archives.gov/history/presidents/chronological.html
+#
+# One president per line, columns separated by a single TAB. The header row just
+# above the data names the columns and is commented out like every other non-data line.
+#
+#   number      presidency number (Cleveland appears twice, as 22 and 24; Trump as 45 and 47)
+#   term_start  ISO-8601 date (yyyy-MM-dd)
+#   term_end    ISO-8601 date, or '-' for the incumbent
+#   name        the only column that may contain spaces
+#   party       single token; '_' replaces a space, '/' separates two affiliations
+#   born        birth year
+#   died        death year, or '-' when living
+#
+# Lines starting with '#' and blank lines are comments.
+#
+# Parsing with java.util.Scanner, delimited by TAB because 'name' may contain spaces:
+#
+#   var s = new Scanner(line).useDelimiter("\t");
+#   int number = s.nextInt();
+#   LocalDate termStart = LocalDate.parse(s.next());
+#   String termEnd = s.next();       // "-" or an ISO date
+#   String name = s.next();
+#   String party = s.next();
+#   int born = s.nextInt();
+#   String died = s.next();          // "-" or a year
+#number	term_start	term_end	name	party	born	died
+1	1789-04-30	1797-03-04	George Washington	Unaffiliated	1732	1799
+2	1797-03-04	1801-03-04	John Adams	Federalist	1735	1826
+3	1801-03-04	1809-03-04	Thomas Jefferson	Democratic-Republican	1743	1826
+4	1809-03-04	1817-03-04	James Madison	Democratic-Republican	1751	1836
+5	1817-03-04	1825-03-04	James Monroe	Democratic-Republican	1758	1831
+6	1825-03-04	1829-03-04	John Quincy Adams	Democratic-Republican/National_Republican	1767	1848
+7	1829-03-04	1837-03-04	Andrew Jackson	Democratic	1767	1845
+8	1837-03-04	1841-03-04	Martin Van Buren	Democratic	1782	1862
+9	1841-03-04	1841-04-04	William Henry Harrison	Whig	1773	1841
+10	1841-04-04	1845-03-04	John Tyler	Whig	1790	1862
+11	1845-03-04	1849-03-04	James K. Polk	Democratic	1795	1849
+12	1849-03-04	1850-07-09	Zachary Taylor	Whig	1784	1850
+13	1850-07-09	1853-03-04	Millard Fillmore	Whig	1800	1874
+14	1853-03-04	1857-03-04	Franklin Pierce	Democratic	1804	1869
+15	1857-03-04	1861-03-04	James Buchanan	Democratic	1791	1868
+16	1861-03-04	1865-04-15	Abraham Lincoln	Republican/National_Union	1809	1865
+17	1865-04-15	1869-03-04	Andrew Johnson	National_Union/Democratic	1808	1875
+18	1869-03-04	1877-03-04	Ulysses S. Grant	Republican	1822	1885
+19	1877-03-04	1881-03-04	Rutherford B. Hayes	Republican	1822	1893
+20	1881-03-04	1881-09-19	James A. Garfield	Republican	1831	1881
+21	1881-09-19	1885-03-04	Chester A. Arthur	Republican	1829	1886
+22	1885-03-04	1889-03-04	Grover Cleveland	Democratic	1837	1908
+23	1889-03-04	1893-03-04	Benjamin Harrison	Republican	1833	1901
+24	1893-03-04	1897-03-04	Grover Cleveland	Democratic	1837	1908
+25	1897-03-04	1901-09-14	William McKinley	Republican	1843	1901
+26	1901-09-14	1909-03-04	Theodore Roosevelt	Republican	1858	1919
+27	1909-03-04	1913-03-04	William Howard Taft	Republican	1857	1930
+28	1913-03-04	1921-03-04	Woodrow Wilson	Democratic	1856	1924
+29	1921-03-04	1923-08-02	Warren G. Harding	Republican	1865	1923
+30	1923-08-02	1929-03-04	Calvin Coolidge	Republican	1872	1933
+31	1929-03-04	1933-03-04	Herbert Hoover	Republican	1874	1964
+32	1933-03-04	1945-04-12	Franklin D. Roosevelt	Democratic	1882	1945
+33	1945-04-12	1953-01-20	Harry S. Truman	Democratic	1884	1972
+34	1953-01-20	1961-01-20	Dwight D. Eisenhower	Republican	1890	1969
+35	1961-01-20	1963-11-22	John F. Kennedy	Democratic	1917	1963
+36	1963-11-22	1969-01-20	Lyndon B. Johnson	Democratic	1908	1973
+37	1969-01-20	1974-08-09	Richard Nixon	Republican	1913	1994
+38	1974-08-09	1977-01-20	Gerald Ford	Republican	1913	2006
+39	1977-01-20	1981-01-20	Jimmy Carter	Democratic	1924	2024
+40	1981-01-20	1989-01-20	Ronald Reagan	Republican	1911	2004
+41	1989-01-20	1993-01-20	George H. W. Bush	Republican	1924	2018
+42	1993-01-20	2001-01-20	Bill Clinton	Democratic	1946	-
+43	2001-01-20	2009-01-20	George W. Bush	Republican	1946	-
+44	2009-01-20	2017-01-20	Barack Obama	Democratic	1961	-
+45	2017-01-20	2021-01-20	Donald Trump	Republican	1946	-
+46	2021-01-20	2025-01-20	Joe Biden	Democratic	1942	-
+47	2025-01-20	-	Donald Trump	Republican	1946	-

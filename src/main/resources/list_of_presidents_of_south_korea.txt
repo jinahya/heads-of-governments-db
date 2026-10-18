@@ -1,0 +1,56 @@
+# https://ko.wikipedia.org/wiki/%EB%8C%80%ED%95%9C%EB%AF%BC%EA%B5%AD_%EB%8C%80%ED%86%B5%EB%A0%B9_%EB%AA%A9%EB%A1%9D
+# https://en.wikipedia.org/wiki/List_of_presidents_of_South_Korea
+# https://www.pa.go.kr/online_contents/president/
+#
+# One presidential term (대) per line, columns separated by a single TAB. The header row
+# just above the data names the columns and is commented out like every other non-data line.
+#
+#   number      the 대 (term number) as Korean usage counts it: one per election, so a
+#               person re-elected keeps one line per term with consecutive numbers
+#               (이승만 is 1, 2 and 3; 박정희 is 5 through 9; 전두환 is 11 and 12)
+#   term_start  ISO-8601 date (yyyy-MM-dd)
+#   term_end    ISO-8601 date, or '-' for the incumbent
+#   name        the only column that may contain spaces
+#   party       single token; '/' separates successive affiliations during the term,
+#               '무소속' is independent
+#   born        birth year
+#   died        death year, or '-' when living
+#
+# Acting presidents (권한대행) hold no 대 and are not listed. A suspension during a term
+# (노무현 2004-03-12 ~ 2004-05-14, 박근혜 2016-12-09 ~ 2017-03-10, 윤석열 2024-12-14 ~
+# 2025-04-04) does not split the line; the term ends on the day the office was vacated.
+#
+# Lines starting with '#' and blank lines are comments.
+#
+# Parsing with java.util.Scanner, delimited by TAB because 'name' may contain spaces:
+#
+#   var s = new Scanner(line).useDelimiter("\t");
+#   int number = s.nextInt();
+#   LocalDate termStart = LocalDate.parse(s.next());
+#   String termEnd = s.next();       // "-" or an ISO date
+#   String name = s.next();
+#   String party = s.next();
+#   int born = s.nextInt();
+#   String died = s.next();          // "-" or a year
+#number	term_start	term_end	name	party	born	died
+1	1948-07-24	1952-08-14	이승만	대한독립촉성국민회/자유당	1875	1965
+2	1952-08-15	1956-08-14	이승만	자유당	1875	1965
+3	1956-08-15	1960-04-27	이승만	자유당	1875	1965
+4	1960-08-12	1962-03-22	윤보선	무소속	1897	1990
+5	1963-12-17	1967-06-30	박정희	민주공화당	1917	1979
+6	1967-07-01	1971-06-30	박정희	민주공화당	1917	1979
+7	1971-07-01	1972-12-26	박정희	민주공화당	1917	1979
+8	1972-12-27	1978-12-26	박정희	민주공화당	1917	1979
+9	1978-12-27	1979-10-26	박정희	민주공화당	1917	1979
+10	1979-12-06	1980-08-16	최규하	무소속	1919	2006
+11	1980-08-27	1981-02-24	전두환	무소속/민주정의당	1931	2021
+12	1981-02-25	1988-02-24	전두환	민주정의당	1931	2021
+13	1988-02-25	1993-02-24	노태우	민주정의당/민주자유당/무소속	1932	2021
+14	1993-02-25	1998-02-24	김영삼	민주자유당/신한국당/무소속	1929	2015
+15	1998-02-25	2003-02-24	김대중	새정치국민회의/새천년민주당/무소속	1924	2009
+16	2003-02-25	2008-02-24	노무현	새천년민주당/무소속/열린우리당/무소속	1946	2009
+17	2008-02-25	2013-02-24	이명박	한나라당/새누리당	1941	-
+18	2013-02-25	2017-03-10	박근혜	새누리당/자유한국당	1952	-
+19	2017-05-10	2022-05-09	문재인	더불어민주당	1953	-
+20	2022-05-10	2025-04-04	윤석열	국민의힘	1960	-
+21	2025-06-04	-	이재명	더불어민주당	1963	-

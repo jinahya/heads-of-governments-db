@@ -1,0 +1,109 @@
+# https://en.wikipedia.org/wiki/List_of_prime_ministers_of_the_United_Kingdom
+#
+# One term of office per line, columns separated by a single TAB. The header row just
+# above the data names the columns and is commented out like every other non-data line.
+#
+#   number      ordinal of the person, by first appointment (Walpole 1, Starmer 58); a
+#               person who served non-consecutive terms has one line per term and keeps
+#               the same number on each of them
+#   term_start  ISO-8601 date (yyyy-MM-dd)
+#   term_end    ISO-8601 date, or '-' for the incumbent
+#   name        the only column that may contain spaces
+#   party       single token; '_' replaces a space, '/' separates two affiliations
+#   born        birth year
+#   died        death year, or '-' when living
+#
+# Lines starting with '#' and blank lines are comments.
+#
+# Parsing with java.util.Scanner, delimited by TAB because 'name' may contain spaces:
+#
+#   var s = new Scanner(line).useDelimiter("\t");
+#   int number = s.nextInt();
+#   LocalDate termStart = LocalDate.parse(s.next());
+#   String termEnd = s.next();       // "-" or an ISO date
+#   String name = s.next();
+#   String party = s.next();
+#   int born = s.nextInt();
+#   String died = s.next();          // "-" or a year
+#number	term_start	term_end	name	party	born	died
+1	1721-04-03	1742-02-11	Robert Walpole	Whig	1676	1745
+2	1742-02-16	1743-07-02	Spencer Compton	Whig	1673	1743
+3	1743-08-27	1754-03-06	Henry Pelham	Whig	1694	1754
+4	1754-03-16	1756-11-11	Thomas Pelham-Holles	Whig	1693	1768
+5	1756-11-16	1757-06-29	William Cavendish	Whig	1720	1764
+4	1757-06-29	1762-05-26	Thomas Pelham-Holles	Whig	1693	1768
+6	1762-05-26	1763-04-08	John Stuart	Tory	1713	1792
+7	1763-04-16	1765-07-10	George Grenville	Whig	1712	1770
+8	1765-07-13	1766-07-30	Charles Watson-Wentworth	Whig	1730	1782
+9	1766-07-30	1768-10-14	William Pitt the Elder	Whig	1708	1778
+10	1768-10-14	1770-01-28	Augustus FitzRoy	Whig	1735	1811
+11	1770-01-28	1782-03-27	Frederick North	Tory	1732	1792
+8	1782-03-27	1782-07-01	Charles Watson-Wentworth	Whig	1730	1782
+12	1782-07-04	1783-03-26	William Petty	Whig	1737	1805
+13	1783-04-02	1783-12-18	William Cavendish-Bentinck	Whig	1738	1809
+14	1783-12-19	1801-03-14	William Pitt the Younger	Tory	1759	1806
+15	1801-03-17	1804-05-10	Henry Addington	Tory	1757	1844
+14	1804-05-10	1806-01-23	William Pitt the Younger	Tory	1759	1806
+16	1806-02-11	1807-03-25	William Grenville	Whig	1759	1834
+13	1807-03-31	1809-10-04	William Cavendish-Bentinck	Tory	1738	1809
+17	1809-10-04	1812-05-11	Spencer Perceval	Tory	1762	1812
+18	1812-06-08	1827-04-09	Robert Jenkinson	Tory	1770	1828
+19	1827-04-12	1827-08-08	George Canning	Tory	1770	1827
+20	1827-08-31	1828-01-08	Frederick John Robinson	Tory	1782	1859
+21	1828-01-22	1830-11-16	Arthur Wellesley	Tory	1769	1852
+22	1830-11-22	1834-07-09	Charles Grey	Whig	1764	1845
+23	1834-07-16	1834-11-14	William Lamb	Whig	1779	1848
+21	1834-11-17	1834-12-09	Arthur Wellesley	Tory	1769	1852
+24	1834-12-10	1835-04-08	Robert Peel	Conservative	1788	1850
+23	1835-04-18	1841-08-30	William Lamb	Whig	1779	1848
+24	1841-08-30	1846-06-29	Robert Peel	Conservative	1788	1850
+25	1846-06-30	1852-02-21	John Russell	Whig	1792	1878
+26	1852-02-23	1852-12-17	Edward Smith-Stanley	Conservative	1799	1869
+27	1852-12-19	1855-01-30	George Hamilton-Gordon	Peelite	1784	1860
+28	1855-02-06	1858-02-19	Henry John Temple	Whig	1784	1865
+26	1858-02-20	1859-06-11	Edward Smith-Stanley	Conservative	1799	1869
+28	1859-06-12	1865-10-18	Henry John Temple	Liberal	1784	1865
+25	1865-10-29	1866-06-26	John Russell	Liberal	1792	1878
+26	1866-06-28	1868-02-25	Edward Smith-Stanley	Conservative	1799	1869
+29	1868-02-27	1868-12-01	Benjamin Disraeli	Conservative	1804	1881
+30	1868-12-03	1874-02-17	William Ewart Gladstone	Liberal	1809	1898
+29	1874-02-20	1880-04-21	Benjamin Disraeli	Conservative	1804	1881
+30	1880-04-23	1885-06-09	William Ewart Gladstone	Liberal	1809	1898
+31	1885-06-23	1886-01-28	Robert Gascoyne-Cecil	Conservative	1830	1903
+30	1886-02-01	1886-07-20	William Ewart Gladstone	Liberal	1809	1898
+31	1886-07-25	1892-08-11	Robert Gascoyne-Cecil	Conservative	1830	1903
+30	1892-08-15	1894-03-02	William Ewart Gladstone	Liberal	1809	1898
+32	1894-03-05	1895-06-22	Archibald Primrose	Liberal	1847	1929
+31	1895-06-25	1902-07-11	Robert Gascoyne-Cecil	Conservative	1830	1903
+33	1902-07-12	1905-12-04	Arthur Balfour	Conservative	1848	1930
+34	1905-12-05	1908-04-03	Henry Campbell-Bannerman	Liberal	1836	1908
+35	1908-04-08	1916-12-05	H. H. Asquith	Liberal	1852	1928
+36	1916-12-06	1922-10-19	David Lloyd George	Liberal	1863	1945
+37	1922-10-23	1923-05-20	Bonar Law	Conservative	1858	1923
+38	1923-05-22	1924-01-22	Stanley Baldwin	Conservative	1867	1947
+39	1924-01-22	1924-11-04	Ramsay MacDonald	Labour	1866	1937
+38	1924-11-04	1929-06-04	Stanley Baldwin	Conservative	1867	1947
+39	1929-06-05	1935-06-07	Ramsay MacDonald	Labour/National_Labour	1866	1937
+38	1935-06-07	1937-05-28	Stanley Baldwin	Conservative	1867	1947
+40	1937-05-28	1940-05-10	Neville Chamberlain	Conservative	1869	1940
+41	1940-05-10	1945-07-26	Winston Churchill	Conservative	1874	1965
+42	1945-07-26	1951-10-26	Clement Attlee	Labour	1883	1967
+41	1951-10-26	1955-04-05	Winston Churchill	Conservative	1874	1965
+43	1955-04-06	1957-01-09	Anthony Eden	Conservative	1897	1977
+44	1957-01-10	1963-10-18	Harold Macmillan	Conservative	1894	1986
+45	1963-10-19	1964-10-16	Alec Douglas-Home	Conservative	1903	1995
+46	1964-10-16	1970-06-19	Harold Wilson	Labour	1916	1995
+47	1970-06-19	1974-03-04	Edward Heath	Conservative	1916	2005
+46	1974-03-04	1976-04-05	Harold Wilson	Labour	1916	1995
+48	1976-04-05	1979-05-04	James Callaghan	Labour	1912	2005
+49	1979-05-04	1990-11-28	Margaret Thatcher	Conservative	1925	2013
+50	1990-11-28	1997-05-02	John Major	Conservative	1943	-
+51	1997-05-02	2007-06-27	Tony Blair	Labour	1953	-
+52	2007-06-27	2010-05-11	Gordon Brown	Labour	1951	-
+53	2010-05-11	2016-07-13	David Cameron	Conservative	1966	-
+54	2016-07-13	2019-07-24	Theresa May	Conservative	1956	-
+55	2019-07-24	2022-09-06	Boris Johnson	Conservative	1964	-
+56	2022-09-06	2022-10-25	Liz Truss	Conservative	1975	-
+57	2022-10-25	2024-07-05	Rishi Sunak	Conservative	1980	-
+58	2024-07-05	2026-07-20	Keir Starmer	Labour	1962	-
+59	2026-07-20	-	Andy Burnham	Labour	1970	-
