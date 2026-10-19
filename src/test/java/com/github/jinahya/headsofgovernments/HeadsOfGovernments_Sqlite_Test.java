@@ -21,6 +21,9 @@ package com.github.jinahya.headsofgovernments;
 
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -30,12 +33,17 @@ import java.sql.Types;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Generates {@code db/heads_of_governments.sqlite3} from the {@code .asv} resources, then reopens it and checks it.
- * The schema is documented in {@code db/heads_of_governments.sqlite3.md}; keep the two in step.
+ * Generates {@code db/heads_of_governments.sqlite3} from {@code schema.sql} and the {@code .asv} resources, then
+ * reopens it and checks it. The schema is documented in {@code db/heads_of_governments.sqlite3.md}; keep the two in
+ * step.
  */
 class HeadsOfGovernments_Sqlite_Test {
 
@@ -46,37 +54,26 @@ class HeadsOfGovernments_Sqlite_Test {
 
     static final String TABLE_HEAD = "head";
 
-    /** The schema, in execution order. */
-    static final List<String> DDL = List.of(
-            """
-            CREATE TABLE office (
-                -- the office the head of government holds; one row per country
-                country    TEXT NOT NULL PRIMARY KEY,                    -- ISO 3166-1 alpha-2: FR, GB, JP, KR, US
-                head_kind  TEXT NOT NULL,                                -- PRESIDENT or PRIME_MINISTER
-                head_title TEXT NOT NULL,                                -- the head's title, in the country's language
-                numbering  TEXT NOT NULL,                                -- what head.number counts for this country
-                CHECK (head_kind IN ('PRESIDENT', 'PRIME_MINISTER'))
-            ) WITHOUT ROWID""",
-            // id is the rowid, so SQLite assigns it; the generator inserts by country then term_start, so it is
-            // 1..N in that order. No uniqueness is declared on (country, term_start); generate() checks it instead.
-            """
-            CREATE TABLE head (
-                -- one term of a head of government
-                id         INTEGER PRIMARY KEY,                          -- the rowid; assigned by the build, not stable
-                country    TEXT    NOT NULL REFERENCES office (country), -- the office's country
-                number     INTEGER NOT NULL,                             -- the term number, as office.numbering says
-                term_start TEXT    NOT NULL,                             -- ISO-8601 date, yyyy-MM-dd
-                term_end   TEXT,                                         -- ISO-8601 date; NULL for the incumbent
-                name       TEXT    NOT NULL,                             -- the person's name, in the source's script
-                party      TEXT    NOT NULL,                             -- one token; / separates successive parties
-                born       INTEGER NOT NULL,                             -- the year of birth
-                died       INTEGER,                                      -- the year of death; NULL while living
-                CHECK (term_end IS NULL OR term_end >= term_start),
-                CHECK (died IS NULL OR died >= born)
-            )""",
-            "CREATE INDEX idx_head_country_number ON head (country, number)",
-            "CREATE INDEX idx_head_name ON head (name)"
-    );
+    /** The schema, {@code schema.sql} beside the lists, in execution order; one element per statement. */
+    static final List<String> DDL = ddl();
+
+    private static List<String> ddl() {
+        final String text;
+        try (var stream = HeadsOfGovernments_Sqlite_Test.class.getResourceAsStream("/schema.sql")) {
+            text = new String(Objects.requireNonNull(stream, "schema.sql").readAllBytes(), StandardCharsets.UTF_8);
+        } catch (final IOException ioe) {
+            throw new UncheckedIOException(ioe);
+        }
+        // a statement ends with a ';' that ends a line; a ';' inside a comment does not. The comment lines before a
+        // statement (the license, a note) are dropped: SQLite keeps a statement's text from its first keyword, and
+        // sqlite-jdbc fails on a statement that opens with a comment
+        return Stream.of(Pattern.compile("(?m);[ \\t]*$").split(text))
+                .map(v -> v.lines().dropWhile(l -> l.isBlank() || l.stripLeading().startsWith("--"))
+                        .collect(Collectors.joining(System.lineSeparator())))
+                .map(String::strip)
+                .filter(v -> !v.isBlank())
+                .toList();
+    }
 
     // -----------------------------------------------------------------------------------------------------------------
     static String url() {

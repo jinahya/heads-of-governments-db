@@ -88,16 +88,27 @@
     <maven.deploy.skip>true</maven.deploy.skip>
     <version.maven-failsafe>${version.maven-surefire}</version.maven-failsafe>
     <version.maven-surefire>3.6.0</version.maven-surefire>
+    <!-- https://central.sonatype.com/artifact/ch.qos.logback/logback-classic/versions -->
+    <version.ch.qos.logback>1.6.5</version.ch.qos.logback>
     <!-- https://central.sonatype.com/artifact/org.assertj/assertj-core/versions -->
     <version.org.assertj>4.0.0-M1</version.org.assertj>
     <!-- https://central.sonatype.com/artifact/org.junit/junit-bom/versions -->
     <version.org.junit>5.14.4</version.org.junit>
+    <!-- https://central.sonatype.com/artifact/org.projectlombok/lombok/versions -->
+    <version.org.projectlombok>1.18.48</version.org.projectlombok>
     <!-- https://central.sonatype.com/artifact/org.xerial/sqlite-jdbc/versions -->
     <version.org.xerial.sqlite-jdbc>3.53.2.1</version.org.xerial.sqlite-jdbc>
+    <!-- https://central.sonatype.com/artifact/org.slf4j/slf4j-bom/versions -->
+    <version.org.slf4j>2.0.20</version.org.slf4j>
   </properties>
 
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>${version.ch.qos.logback}</version>
+      </dependency>
       <dependency>
         <groupId>org.assertj</groupId>
         <artifactId>assertj-core</artifactId>
@@ -115,9 +126,21 @@
         <artifactId>sqlite-jdbc</artifactId>
         <version>${version.org.xerial.sqlite-jdbc}</version>
       </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-bom</artifactId>
+        <version>${version.org.slf4j}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
   <dependencies>
+    <dependency><!-- the binding sqlite-jdbc logs through; configured by src/test/resources/logback-test.xml -->
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
@@ -126,6 +149,17 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency><!-- compile-time only, for @Slf4j on the tests; never transitive -->
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>${version.org.projectlombok}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency><!-- the tests log through SLF4J (@Slf4j); logback-classic is the binding -->
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency><!-- the generator writes db/heads_of_governments.sqlite3 through plain JDBC -->
@@ -220,6 +254,13 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>${version.org.projectlombok}</version>
+            </path>
+          </annotationProcessorPaths>
           <compilerArgs>
             <arg>-Xlint</arg>
           </compilerArgs>

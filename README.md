@@ -155,7 +155,7 @@ sentence, the rule for `number` given above.
 ## How it is built
 
 A JUnit test is the generator. `HeadsOfGovernments_Sqlite_Test` parses the `.asv` files, deletes any
-previous database, creates the schema, inserts everything in one transaction with foreign keys on,
+previous database, creates the schema from `schema.sql`, inserts everything in one transaction with foreign keys on,
 runs `ANALYZE`, then reopens the file and checks it: row counts per country, five incumbents, no
 orphans, the indexes present. `VACUUM` is the last step, so the file ships compact. `_Asv_Test` checks the inputs first. The only
 dependencies are JUnit, AssertJ and [sqlite-jdbc](https://github.com/xerial/sqlite-jdbc), all in

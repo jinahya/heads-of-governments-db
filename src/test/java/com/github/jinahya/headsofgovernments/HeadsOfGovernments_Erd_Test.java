@@ -37,8 +37,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Draws {@code db/erd/all.svg}, the whole schema, and {@code db/erd/<table>.svg}, one per table, from
  * {@link HeadsOfGovernments_Sqlite_Test#DDL}. The DDL is run on an in-memory database and read back through the
- * {@code PRAGMA}s and {@code sqlite_master.sql}, so a diagram is the schema as SQLite sees it, comments included, and
- * cannot drift from it; nothing here knows a table by name.
+ * {@code PRAGMA}s and {@code sqlite_master.sql}, so a diagram is the schema as SQLite sees it and cannot drift from
+ * it; nothing here knows a table by name. The {@code --} comments of the DDL are not drawn: the book that embeds the
+ * images describes the columns itself.
  */
 class HeadsOfGovernments_Erd_Test {
 
@@ -51,7 +52,7 @@ class HeadsOfGovernments_Erd_Test {
     }
 
     // -----------------------------------------------------------------------------------------------------------------
-    record Column(String name, String type, boolean notNull, boolean pk, String comment) {
+    record Column(String name, String type, boolean notNull, boolean pk) {
     }
 
     record ForeignKey(String from, String table, String to) {
@@ -60,8 +61,8 @@ class HeadsOfGovernments_Erd_Test {
     record Index(String name, boolean unique, List<String> columns) {
     }
 
-    record Table(String name, boolean withoutRowid, String comment, List<Column> columns,
-                 List<ForeignKey> foreignKeys, List<Index> indexes) {
+    record Table(String name, boolean withoutRowid, List<Column> columns, List<ForeignKey> foreignKeys,
+                 List<Index> indexes) {
 
         int indexOf(final String column) {
             for (int i = 0; i < columns.size(); i++) {
@@ -73,35 +74,7 @@ class HeadsOfGovernments_Erd_Test {
         }
     }
 
-    /**
-     * The {@code --} comment of a line of a {@code CREATE TABLE}, or {@code null}. SQLite has no {@code COMMENT ON};
-     * what it keeps is the statement's text, verbatim, in {@code sqlite_master.sql}, so a comment on a column's line
-     * is the column's comment, and a line that is only a comment, before any column, is the table's.
-     */
-    static String comment(final String line) {
-        final var at = line.indexOf("--");
-        return at < 0 ? null : line.substring(at + 2).strip();
-    }
-
-    /** The comment on the line that declares {@code column}, or {@code null}. */
-    static String columnComment(final String sql, final String column) {
-        for (final var line : sql.split("\\R")) {
-            final var stripped = line.stripLeading();
-            if (stripped.startsWith(column) && !Character.isLetterOrDigit(stripped.charAt(column.length()))
-                && stripped.charAt(column.length()) != '_') {
-                return comment(line);
-            }
-        }
-        return null;
-    }
-
-    /** The comment of the first line inside the parentheses, when that line is nothing but a comment. */
-    static String tableComment(final String sql) {
-        final var lines = sql.split("\\R");
-        return lines.length > 1 && lines[1].stripLeading().startsWith("--") ? comment(lines[1]) : null;
-    }
-
-    /** Reads every user table of the connection, with its columns, comments, foreign keys and explicit indexes. */
+    /** Reads every user table of the connection, with its columns, foreign keys and explicit indexes. */
     static List<Table> read(final Connection connection) throws SQLException {
         final var tables = new ArrayList<Table>();
         final var names = new ArrayList<String>();
@@ -124,7 +97,7 @@ class HeadsOfGovernments_Erd_Test {
                 while (results.next()) {
                     final var column = results.getString("name");
                     columns.add(new Column(column, results.getString("type"), results.getInt("notnull") != 0,
-                                           results.getInt("pk") != 0, columnComment(sql, column)));
+                                           results.getInt("pk") != 0));
                 }
             }
             final var foreignKeys = new ArrayList<ForeignKey>();
@@ -155,8 +128,8 @@ class HeadsOfGovernments_Erd_Test {
                 }
             }
             indexes.sort(Comparator.comparing(Index::name));
-            tables.add(new Table(name, sql.toUpperCase(Locale.ROOT).contains("WITHOUT ROWID"), tableComment(sql),
-                                 columns, foreignKeys, indexes));
+            tables.add(new Table(name, sql.toUpperCase(Locale.ROOT).contains("WITHOUT ROWID"), columns, foreignKeys,
+                                 indexes));
         }
         // parents to the left of the tables that reference them
         tables.sort(Comparator.comparingInt((Table table) -> table.foreignKeys().size()).thenComparing(Table::name));
@@ -178,9 +151,6 @@ class HeadsOfGovernments_Erd_Test {
     static final int MARGIN = 24;
 
     static final int GAP = 120;
-
-    /** A character of the 11px sans-serif notes, generously. */
-    static final int SMALL = 6;
 
     static final String MONO = "ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace";
 
@@ -220,13 +190,7 @@ class HeadsOfGovernments_Erd_Test {
             }
             lines.add(body);
             var chars = body.stream().mapToInt(String::length).max().orElse(0);
-            final var commented = table.columns().stream().mapToInt(c -> c.comment() == null ? 0 : c.comment().length())
-                    .max().orElse(0);
-            if (commented > 0) { // the comment column, in the same monospace, two spaces after the longest line
-                chars += 2 + commented;
-            }
-            chars = Math.max(chars, table.name().length() + 2 + (table.withoutRowid() ? 13 : 12)
-                                    + (table.comment() == null ? 0 : (table.comment().length() * SMALL) / CHAR + 2));
+            chars = Math.max(chars, table.name().length() + 2 + (table.withoutRowid() ? 13 : 12));
             for (final var index : table.indexes()) {
                 chars = Math.max(chars, line(index).length() - 2); // the footer is 11px, roughly 6.5px a char
             }
@@ -280,22 +244,10 @@ class HeadsOfGovernments_Erd_Test {
                                      + " text-anchor=\"end\">%s</text>\n",
                                      tx + w - PAD, top + 20, SANS,
                                      table.withoutRowid() ? "WITHOUT ROWID" : "rowid table"));
-            if (table.comment() != null) {
-                svg.append(String.format(Locale.ROOT,
-                                         "    <text x=\"%d\" y=\"%d\" font-family=\"%s\" font-size=\"11\""
-                                         + " fill=\"#57606a\">%s</text>\n",
-                                         tx + PAD + (table.name().length() + 1) * 9, top + 20, SANS,
-                                         escape(table.comment())));
-            }
-            final var longest = lines.get(t).stream().mapToInt(String::length).max().orElse(0);
             var y = top + HEADER;
             for (int c = 0; c < table.columns().size(); c++) {
                 final var column = table.columns().get(c);
-                var text = escape(lines.get(t).get(c));
-                if (column.comment() != null) {
-                    text = text + " ".repeat(longest - lines.get(t).get(c).length() + 2)
-                           + "<tspan font-weight=\"400\" fill=\"#57606a\">" + escape(column.comment()) + "</tspan>";
-                }
+                final var text = escape(lines.get(t).get(c));
                 svg.append(String.format(Locale.ROOT,
                                          "    <text x=\"%d\" y=\"%d\" font-family=\"%s\" font-size=\"13\"%s"
                                          + " fill=\"#1f2328\" xml:space=\"preserve\">%s</text>\n",

@@ -86,7 +86,7 @@ SELECT number,
        name,
        term_start,
        term_end,
-       CAST(julianday(COALESCE(term_end, date('now'))) - julianday(term_start) AS INTEGER) AS days
+       CAST(julianday(COALESCE(term_end, date ('now'))) - julianday(term_start) AS INTEGER) AS days
 FROM head
 WHERE country = :country
 ORDER BY days DESC, term_start ASC
@@ -170,12 +170,56 @@ SELECT country,
        term_start,
        term_end
 FROM (SELECT h.*,
-             ROW_NUMBER() OVER (PARTITION BY country ORDER BY term_start ASC)  AS first_rn,
-             ROW_NUMBER() OVER (PARTITION BY country ORDER BY term_start DESC) AS latest_rn
+             ROW_NUMBER() OVER (PARTITION BY country ORDER BY term_start ASC)  AS first_rn, ROW_NUMBER() OVER (PARTITION BY country ORDER BY term_start DESC) AS latest_rn
       FROM head AS h)
 WHERE first_rn <= :n
    OR latest_rn <= :n
 ORDER BY country ASC, term_start ASC
+;
+
+
+-- ------------------------------------------------------------------- HOG-HEAD-I-09 The first two terms of each country
+-- Per country, its first two terms, the earlier first. Terms, not persons: a head whose first two terms were
+-- consecutive appears twice. term_start is NOT NULL and distinct within a country, so the numbering has no ties.
+SELECT country, name, term_start, term_end
+FROM (SELECT h.*, ROW_NUMBER() OVER (PARTITION BY country ORDER BY term_start ASC) AS first_rn
+      FROM head AS h)
+WHERE first_rn <= 2
+ORDER BY country ASC, term_start ASC
+;
+
+-- ---------------------------------------------------------- HOG-HEAD-I-10 Two or more terms, the top three per country
+-- Per country, up to three heads with two or more terms, most terms first and, at a tie, the earlier first term first;
+-- a name is taken as one person.
+SELECT country, name, terms
+FROM (SELECT country,
+             name,
+             COUNT(*) AS  terms,
+             ROW_NUMBER() OVER (PARTITION BY country ORDER BY COUNT(*) DESC, MIN(term_start) ASC) AS place
+      FROM head
+      GROUP BY country, name
+      HAVING COUNT(*) >= 2)
+WHERE place <= 3
+ORDER BY country ASC, place ASC
+;
+
+
+-- --------------------------------------------- HOG-HEAD-I-11 Party share of completed terms, the top three per country
+-- Per country, over the terms that have ended, each party's share of the days in office as a percentage of that
+-- country's total (its tenure share), the top three parties; a succession ('A/B') counts as a party of its own.
+SELECT country, party, tenure_share
+FROM (SELECT country,
+             party,
+             ROUND(100.0 * SUM(julianday(term_end) - julianday(term_start))
+                       / SUM(SUM(julianday(term_end) - julianday(term_start))) OVER (PARTITION BY country),
+                   1) AS  tenure_share,
+             ROW_NUMBER() OVER (PARTITION BY country
+                 ORDER BY SUM(julianday(term_end) - julianday(term_start)) DESC)             AS place
+      FROM head
+      WHERE term_end IS NOT NULL
+      GROUP BY country, party)
+WHERE place <= 3
+ORDER BY country ASC, tenure_share DESC
 ;
 
 
@@ -194,8 +238,7 @@ SELECT country,
 FROM (SELECT country,
              name,
              term_start,
-             LAG(name) OVER (PARTITION BY country ORDER BY term_start)     AS previous_name,
-             LAG(term_end) OVER (PARTITION BY country ORDER BY term_start) AS previous_term_end
+             LAG(name) OVER (PARTITION BY country ORDER BY term_start)     AS previous_name, LAG(term_end) OVER (PARTITION BY country ORDER BY term_start) AS previous_term_end
       FROM head)
 WHERE julianday(term_start) - julianday(previous_term_end) > 1
 ORDER BY country ASC, term_start ASC
@@ -208,9 +251,9 @@ ORDER BY country ASC, term_start ASC
 SELECT country, name, terms, days
 FROM (SELECT country,
              name,
-             COUNT(*)                                                                                   AS terms,
-             CAST(SUM(julianday(COALESCE(term_end, date('now'))) - julianday(term_start)) AS INTEGER)   AS days,
-             RANK() OVER (PARTITION BY country
+             COUNT(*)                                                                                  AS terms,
+             CAST(SUM(julianday(COALESCE(term_end, date ('now'))) - julianday(term_start)) AS INTEGER) AS days,
+             RANK()                                                                                       OVER (PARTITION BY country
                  ORDER BY SUM(julianday(COALESCE(term_end, date('now'))) - julianday(term_start)) DESC) AS place
       FROM head
       GROUP BY country, name)
@@ -226,14 +269,13 @@ WITH ordered AS (SELECT country,
                         party,
                         term_start,
                         term_end,
-                        ROW_NUMBER() OVER (PARTITION BY country ORDER BY term_start)        AS seq,
-                        ROW_NUMBER() OVER (PARTITION BY country, party ORDER BY term_start) AS seq_in_party
+                        ROW_NUMBER() OVER (PARTITION BY country ORDER BY term_start)        AS seq, ROW_NUMBER() OVER (PARTITION BY country, party ORDER BY term_start) AS seq_in_party
                  FROM head),
      runs AS (SELECT country,
                      party,
-                     COUNT(*)                             AS terms,
-                     MIN(term_start)                      AS since,
-                     MAX(COALESCE(term_end, date('now'))) AS until
+                     COUNT(*)                              AS terms,
+                     MIN(term_start)                       AS since,
+                     MAX(COALESCE(term_end, date ('now'))) AS until
               FROM ordered
               GROUP BY country, party, seq - seq_in_party),
      placed AS (SELECT *, RANK() OVER (PARTITION BY country ORDER BY terms DESC, since ASC) AS place
@@ -278,8 +320,7 @@ FROM (SELECT country,
              name,
              term_start,
              term_end,
-             LAG(name) OVER (PARTITION BY country ORDER BY term_start)  AS predecessor,
-             LEAD(name) OVER (PARTITION BY country ORDER BY term_start) AS successor
+             LAG(name) OVER (PARTITION BY country ORDER BY term_start)  AS predecessor, LEAD(name) OVER (PARTITION BY country ORDER BY term_start) AS successor
       FROM head)
 WHERE name = :name
 ORDER BY country ASC, term_start ASC

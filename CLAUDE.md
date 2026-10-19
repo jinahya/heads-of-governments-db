@@ -17,6 +17,7 @@ The sibling `../kftc-financial-institution-info` was the model for this, down to
 
 ```
 src/main/resources/
+  schema.sql                                           the DDL, hand-edited
   list_of_offices.txt                                  the five offices, hand-edited
   list_of_offices.asv                                  the same, flattened (generated)
   list_of_presidents_of_france.txt / .asv              one country's heads, hand-edited / flattened
@@ -26,10 +27,14 @@ src/main/resources/
   list_of_prime_ministers_of_the_united_kingdom.txt / .asv
 src/test/java/com/github/jinahya/headsofgovernments/
   _Asv.java                                            reads .asv; flattens a delimited .txt to .asv
+  _LoggingUtils.java                                   reconfigures Logback from a test; messageOnly()
   Office.java, Head.java                               records, one per table, each with from(String[])
   _Asv_Test.java                                       the .asv files are current and parse as expected
-  HeadsOfGovernments_Sqlite_Test.java                  the generator; holds the DDL
+  HeadsOfGovernments_Sqlite_Test.java                  the generator; runs schema.sql
   HeadsOfGovernments_Erd_Test.java                     draws the ERD .svg files from the DDL
+  HeadsOfGovernments_Exercises_Test.java               runs a few exercises over plain JDBC, checks their rows
+src/test/resources/
+  logback-test.xml                                     console logging, the message alone
 src/test/sql/
   office.sql, head.sql                                 profiling queries, a section per column
   office_exercises.sql, head_exercises.sql             exercises on one table, Basic / Intermediate / Advanced
@@ -76,18 +81,20 @@ the `.txt` in the build, as the `.asv` and the database are.
 
 ## The schema
 
-Two tables, `office` (`WITHOUT ROWID`) and `head` (a rowid table). The DDL lives in
-`HeadsOfGovernments_Sqlite_Test.DDL` and is repeated in `db/heads_of_governments.sqlite3.md`, as SQL and
-as a Mermaid ERD; **a change to one is a change to both.** The images under `db/erd` are not a third
+Two tables, `office` (`WITHOUT ROWID`) and `head` (a rowid table). The DDL is
+`src/main/resources/schema.sql`, beside the lists, hand-edited like them: `HeadsOfGovernments_Sqlite_Test.DDL`
+loads it, one element per statement, split on a `;` that ends a line, with the comment lines before a
+statement (the license, a note) dropped. It is repeated in `db/heads_of_governments.sqlite3.md`, as SQL
+and as a Mermaid ERD; **a change to one is a change to both.** The images under `db/erd` are not a third
 copy: `HeadsOfGovernments_Erd_Test` draws them from the DDL on every build, through the `PRAGMA`s of
 an in-memory database, so they only need committing.
 
 Every table and column carries a `--` comment in the DDL. SQLite has no `COMMENT ON`, but it stores
-the statement's text verbatim in `sqlite_master.sql`, so the comments ship in the file, `.schema`
-shows them, and the ERD generator reads them from there: a line that is only a comment, first inside
-the parentheses, is the table's; a comment on a column's line is the column's. Keep a comment short
-enough that the line stays within 120 in the Java source, and keep the column notes in the schema
-notes saying the same thing.
+the statement's text verbatim in `sqlite_master.sql`, so the comments ship in the file and `.schema`
+shows them: a line that is only a comment, first inside the parentheses, is the table's; a comment on
+a column's line is the column's. The ERD images do not draw them, by decision: the book embeds the
+images and describes the columns itself. Keep a comment within 120 columns, and keep the column notes
+in the schema notes saying the same thing.
 
 - `office` is the office the head of government holds -- 内閣総理大臣, 대통령, the Prime Minister --
   not an administration or a government. Key `country`, ISO 3166-1 alpha-2 as `Locale.getCountry()`
@@ -110,8 +117,10 @@ Names are country codes and snake_case; keep them so. If a country ever contribu
 ## The SQL files
 
 `src/test/sql` holds hand-written SQL against the generated database, after the sibling
-`../oracle-sample-schemas-persistence`. Nothing runs them in the build; they are for a reader with the
-`sqlite3` tool or an IDE, and `sqlite3 db/heads_of_governments.sqlite3 '.read src/test/sql/head.sql'`
+`../oracle-sample-schemas-persistence`. They are for a reader with the `sqlite3` tool or an IDE. The build runs
+a few of the exercises: `HeadsOfGovernments_Exercises_Test` holds each as a text block, runs it over plain JDBC
+on the committed file and checks the rows it returns, so a change to one of those queries or to
+the data is a change to that test too. `sqlite3 db/heads_of_governments.sqlite3 '.read src/test/sql/head.sql'`
 runs one whole.
 
 - `office.sql` and `head.sql` profile a table, a section per column under a ruler, each query
@@ -147,10 +156,14 @@ sqlite3 db/heads_of_governments.sqlite3 '.schema' 'SELECT country, name FROM hea
 
 ## Dependencies
 
-Three, all `test` scope: JUnit Jupiter, AssertJ and `org.xerial:sqlite-jdbc`. Versions live in
-`<properties>` and `<dependencyManagement>` of `pom.xml`; the enforcer's `dependencyConvergence`
-runs on every build. Do not add a persistence framework, an ORM, a logging binding or a utility
-library: the generator is plain JDBC and `java.nio`, and should stay that way. `sqlite-jdbc` is the
+All `test` scope: JUnit Jupiter, AssertJ, `org.xerial:sqlite-jdbc`, Logback (`logback-classic`,
+with `slf4j-bom` imported so SLF4J converges), `slf4j-api`, and Lombok for `@Slf4j`, which is also on
+the compiler's `annotationProcessorPaths`, as in the sibling. Versions live in `<properties>`
+and `<dependencyManagement>` of `pom.xml`; the enforcer's `dependencyConvergence` runs on every build.
+A test logs through `@Slf4j`, and Logback is the binding it and sqlite-jdbc log through; `src/test/resources/logback-test.xml`, after the
+sibling `../heads-of-governments-persistence`, prints the message alone (`%msg%n`). Do not add a
+persistence framework, an ORM or a utility library: the generator is plain JDBC and `java.nio`, and
+should stay that way. `sqlite-jdbc` is the
 only dependency with native code; it loads its own library and needs nothing installed.
 
 ## Conventions
