@@ -60,8 +60,9 @@ erDiagram
 The crow's foot is what the schema declares: a head belongs to exactly one office, and nothing stops
 an office from having no head. The generator asserts the rest after the inserts -- every office has
 at least one term, exactly one with `term_end IS NULL`, and no `(country, term_start)` repeats -- so
-the file as built is stricter than the diagram. The same diagram as an image, drawn from the DDL by
-the build and not by hand: [heads_of_governments.sqlite3.erd.svg](heads_of_governments.sqlite3.erd.svg).
+the file as built is stricter than the diagram. The same as images, drawn from the DDL by the build
+and not by hand: [both tables](erd/all.svg), [office alone](erd/office.svg),
+[head alone](erd/head.svg).
 
 ## `office`
 

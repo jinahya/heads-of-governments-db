@@ -35,14 +35,19 @@ import java.util.Locale;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Draws {@code db/heads_of_governments.sqlite3.erd.svg} from {@link HeadsOfGovernments_Sqlite_Test#DDL}. The DDL is run
- * on an in-memory database and read back through the {@code PRAGMA}s, so the diagram is the schema as SQLite sees it
- * and cannot drift from it; nothing here knows a table by name.
+ * Draws {@code db/erd/all.svg}, the whole schema, and {@code db/erd/<table>.svg}, one per table, from {@link HeadsOfGovernments_Sqlite_Test#DDL}. The DDL is run on an in-memory database and read back through
+ * the {@code PRAGMA}s, so a diagram is the schema as SQLite sees it and cannot drift from it; nothing here knows a
+ * table by name.
  */
 class HeadsOfGovernments_Erd_Test {
 
-    /** The file to draw, relative to the project directory, which is where surefire runs. */
-    static final Path PATH = Path.of("db", "heads_of_governments.sqlite3.erd.svg");
+    /** The whole schema, relative to the project directory, which is where surefire runs. */
+    static final Path PATH = Path.of("db", "erd", "all.svg");
+
+    /** One table alone. */
+    static Path path(final Table table) {
+        return PATH.resolveSibling(table.name() + ".svg");
+    }
 
     // -----------------------------------------------------------------------------------------------------------------
     record Column(String name, String type, boolean notNull, boolean pk) {
@@ -140,8 +145,6 @@ class HeadsOfGovernments_Erd_Test {
 
     static final int MARGIN = 24;
 
-    static final int TITLE = 44;
-
     static final int GAP = 120;
 
     static final String MONO = "ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace";
@@ -164,6 +167,7 @@ class HeadsOfGovernments_Erd_Test {
         return (index.unique() ? "UNIQUE " : "") + index.name() + " (" + String.join(", ", index.columns()) + ")";
     }
 
+    /** Draws the tables given, and the relationships whose both ends are among them. */
     static String draw(final List<Table> tables) {
         // size each box
         final var widths = new int[tables.size()];
@@ -198,10 +202,9 @@ class HeadsOfGovernments_Erd_Test {
             x += widths[t] + GAP;
             bottom = Math.max(bottom, heights[t]);
         }
-        final var top = MARGIN + TITLE;
+        final var top = MARGIN;
         final var width = x - GAP + MARGIN;
         final var height = top + bottom + MARGIN;
-        final var relationships = tables.stream().mapToInt(t -> t.foreignKeys().size()).sum();
         // draw
         final var svg = new StringBuilder();
         svg.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -210,16 +213,6 @@ class HeadsOfGovernments_Erd_Test {
                                  + " viewBox=\"0 0 %d %d\">\n", width, height, width, height));
         svg.append(String.format(Locale.ROOT, "  <rect width=\"%d\" height=\"%d\" fill=\"#ffffff\"/>\n",
                                  width, height));
-        svg.append(String.format(Locale.ROOT,
-                                 "  <text x=\"%d\" y=\"%d\" font-family=\"%s\" font-size=\"16\" font-weight=\"600\""
-                                 + " fill=\"#1f2328\">%s</text>\n",
-                                 MARGIN, MARGIN + 14, SANS,
-                                 escape(HeadsOfGovernments_Sqlite_Test.PATH.getFileName().toString())));
-        svg.append(String.format(Locale.ROOT,
-                                 "  <text x=\"%d\" y=\"%d\" font-family=\"%s\" font-size=\"11\" fill=\"#57606a\">"
-                                 + "%d tables, %d relationship%s; drawn from the DDL by the build</text>\n",
-                                 MARGIN, MARGIN + 32, SANS, tables.size(), relationships,
-                                 relationships == 1 ? "" : "s"));
         for (int t = 0; t < tables.size(); t++) {
             final var table = tables.get(t);
             final var tx = xs[t];
@@ -276,8 +269,15 @@ class HeadsOfGovernments_Erd_Test {
         for (int t = 0; t < tables.size(); t++) {
             final var child = tables.get(t);
             for (final var key : child.foreignKeys()) {
-                final var p = tables.indexOf(tables.stream().filter(o -> o.name().equals(key.table())).findFirst()
-                                                     .orElseThrow());
+                var p = -1;
+                for (int o = 0; o < tables.size(); o++) {
+                    if (tables.get(o).name().equals(key.table())) {
+                        p = o;
+                    }
+                }
+                if (p < 0) { // the parent is not drawn
+                    continue;
+                }
                 final var parent = tables.get(p);
                 final var px = xs[p] + widths[p];
                 final var py = top + HEADER + parent.indexOf(key.to()) * ROW + ROW / 2;
@@ -314,9 +314,15 @@ class HeadsOfGovernments_Erd_Test {
         assertThat(tables).extracting(Table::name)
                 .containsExactly(HeadsOfGovernments_Sqlite_Test.TABLE_OFFICE,
                                  HeadsOfGovernments_Sqlite_Test.TABLE_HEAD);
-        final var svg = draw(tables);
         Files.createDirectories(PATH.getParent());
-        Files.writeString(PATH, svg, StandardCharsets.UTF_8);
-        assertThat(Files.readString(PATH, StandardCharsets.UTF_8)).isEqualTo(svg).contains("<svg ", "</svg>");
+        final var whole = draw(tables);
+        Files.writeString(PATH, whole, StandardCharsets.UTF_8);
+        assertThat(Files.readString(PATH, StandardCharsets.UTF_8)).isEqualTo(whole).contains("<svg ", "</svg>");
+        for (final var table : tables) {
+            final var alone = draw(List.of(table));
+            Files.writeString(path(table), alone, StandardCharsets.UTF_8);
+            assertThat(Files.readString(path(table), StandardCharsets.UTF_8)).isEqualTo(alone)
+                    .contains("id=\"" + table.name() + "\"");
+        }
     }
 }
