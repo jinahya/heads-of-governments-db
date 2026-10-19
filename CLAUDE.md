@@ -82,6 +82,13 @@ as a Mermaid ERD; **a change to one is a change to both.** The images under `db/
 copy: `HeadsOfGovernments_Erd_Test` draws them from the DDL on every build, through the `PRAGMA`s of
 an in-memory database, so they only need committing.
 
+Every table and column carries a `--` comment in the DDL. SQLite has no `COMMENT ON`, but it stores
+the statement's text verbatim in `sqlite_master.sql`, so the comments ship in the file, `.schema`
+shows them, and the ERD generator reads them from there: a line that is only a comment, first inside
+the parentheses, is the table's; a comment on a column's line is the column's. Keep a comment short
+enough that the line stays within 120 in the Java source, and keep the column notes in the schema
+notes saying the same thing.
+
 - `office` is the office the head of government holds -- 内閣総理大臣, 대통령, the Prime Minister --
   not an administration or a government. Key `country`, ISO 3166-1 alpha-2 as `Locale.getCountry()`
   returns it: the United Kingdom is `GB`. `head_kind` is `PRESIDENT` or `PRIME_MINISTER`, checked.

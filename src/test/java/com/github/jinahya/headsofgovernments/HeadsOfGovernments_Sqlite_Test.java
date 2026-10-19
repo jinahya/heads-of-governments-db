@@ -50,24 +50,27 @@ class HeadsOfGovernments_Sqlite_Test {
     static final List<String> DDL = List.of(
             """
             CREATE TABLE office (
-                country    TEXT NOT NULL PRIMARY KEY,
-                head_kind  TEXT NOT NULL CHECK (head_kind IN ('PRESIDENT', 'PRIME_MINISTER')),
-                head_title TEXT NOT NULL,
-                numbering  TEXT NOT NULL
+                -- the office the head of government holds; one row per country
+                country    TEXT NOT NULL PRIMARY KEY,                    -- ISO 3166-1 alpha-2: FR, GB, JP, KR, US
+                head_kind  TEXT NOT NULL,                                -- PRESIDENT or PRIME_MINISTER
+                head_title TEXT NOT NULL,                                -- the head's title, in the country's language
+                numbering  TEXT NOT NULL,                                -- what head.number counts for this country
+                CHECK (head_kind IN ('PRESIDENT', 'PRIME_MINISTER'))
             ) WITHOUT ROWID""",
             // id is the rowid, so SQLite assigns it; the generator inserts by country then term_start, so it is
             // 1..N in that order. No uniqueness is declared on (country, term_start); generate() checks it instead.
             """
             CREATE TABLE head (
-                id         INTEGER PRIMARY KEY,
-                country    TEXT    NOT NULL REFERENCES office (country),
-                number     INTEGER NOT NULL,
-                term_start TEXT    NOT NULL,
-                term_end   TEXT,
-                name       TEXT    NOT NULL,
-                party      TEXT    NOT NULL,
-                born       INTEGER NOT NULL,
-                died       INTEGER,
+                -- one term of a head of government
+                id         INTEGER PRIMARY KEY,                          -- the rowid; assigned by the build, not stable
+                country    TEXT    NOT NULL REFERENCES office (country), -- the office's country
+                number     INTEGER NOT NULL,                             -- the term number, as office.numbering says
+                term_start TEXT    NOT NULL,                             -- ISO-8601 date, yyyy-MM-dd
+                term_end   TEXT,                                         -- ISO-8601 date; NULL for the incumbent
+                name       TEXT    NOT NULL,                             -- the person's name, in the source's script
+                party      TEXT    NOT NULL,                             -- one token; / separates successive parties
+                born       INTEGER NOT NULL,                             -- the year of birth
+                died       INTEGER,                                      -- the year of death; NULL while living
                 CHECK (term_end IS NULL OR term_end >= term_start),
                 CHECK (died IS NULL OR died >= born)
             )""",

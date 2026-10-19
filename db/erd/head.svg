@@ -1,22 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="384" height="332" viewBox="0 0 384 332">
-  <rect width="384" height="332" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="332" viewBox="0 0 704 332">
+  <rect width="704" height="332" fill="#ffffff"/>
   <g id="head">
-    <rect x="24" y="24" width="336" height="284" rx="6" fill="#ffffff" stroke="#d0d7de"/>
-    <path d="M24 56h336v-26a6 6 0 0 0 -6 -6h-324a6 6 0 0 0 -6 6z" fill="#f6f8fa"/>
-    <line x1="24" y1="56" x2="360" y2="56" stroke="#d0d7de"/>
+    <rect x="24" y="24" width="656" height="284" rx="6" fill="#ffffff" stroke="#d0d7de"/>
+    <path d="M24 56h656v-26a6 6 0 0 0 -6 -6h-644a6 6 0 0 0 -6 6z" fill="#f6f8fa"/>
+    <line x1="24" y1="56" x2="680" y2="56" stroke="#d0d7de"/>
     <text x="36" y="45" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="14" font-weight="600" fill="#1f2328">head</text>
-    <text x="348" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" fill="#57606a" text-anchor="end">rowid table</text>
-    <text x="36" y="72" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" font-weight="600" fill="#1f2328" xml:space="preserve">PK  id          INTEGER  NOT NULL</text>
-    <text x="36" y="94" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#1f2328" xml:space="preserve">FK  country     TEXT     NOT NULL</text>
-    <text x="36" y="116" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#1f2328" xml:space="preserve">    number      INTEGER  NOT NULL</text>
-    <text x="36" y="138" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#1f2328" xml:space="preserve">    term_start  TEXT     NOT NULL</text>
-    <text x="36" y="160" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#1f2328" xml:space="preserve">    term_end    TEXT     NULL</text>
-    <text x="36" y="182" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#1f2328" xml:space="preserve">    name        TEXT     NOT NULL</text>
-    <text x="36" y="204" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#1f2328" xml:space="preserve">    party       TEXT     NOT NULL</text>
-    <text x="36" y="226" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#1f2328" xml:space="preserve">    born        INTEGER  NOT NULL</text>
-    <text x="36" y="248" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#1f2328" xml:space="preserve">    died        INTEGER  NULL</text>
-    <line x1="24" y1="260" x2="360" y2="260" stroke="#d0d7de"/>
+    <text x="668" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" fill="#57606a" text-anchor="end">rowid table</text>
+    <text x="81" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" fill="#57606a">one term of a head of government</text>
+    <text x="36" y="72" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" font-weight="600" fill="#1f2328" xml:space="preserve">PK  id          INTEGER  NOT NULL  <tspan font-weight="400" fill="#57606a">the rowid; assigned by the build, not stable</tspan></text>
+    <text x="36" y="94" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#1f2328" xml:space="preserve">FK  country     TEXT     NOT NULL  <tspan font-weight="400" fill="#57606a">the office's country</tspan></text>
+    <text x="36" y="116" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#1f2328" xml:space="preserve">    number      INTEGER  NOT NULL  <tspan font-weight="400" fill="#57606a">the term number, as office.numbering says</tspan></text>
+    <text x="36" y="138" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#1f2328" xml:space="preserve">    term_start  TEXT     NOT NULL  <tspan font-weight="400" fill="#57606a">ISO-8601 date, yyyy-MM-dd</tspan></text>
+    <text x="36" y="160" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#1f2328" xml:space="preserve">    term_end    TEXT     NULL      <tspan font-weight="400" fill="#57606a">ISO-8601 date; NULL for the incumbent</tspan></text>
+    <text x="36" y="182" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#1f2328" xml:space="preserve">    name        TEXT     NOT NULL  <tspan font-weight="400" fill="#57606a">the person's name, in the source's script</tspan></text>
+    <text x="36" y="204" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#1f2328" xml:space="preserve">    party       TEXT     NOT NULL  <tspan font-weight="400" fill="#57606a">one token; / separates successive parties</tspan></text>
+    <text x="36" y="226" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#1f2328" xml:space="preserve">    born        INTEGER  NOT NULL  <tspan font-weight="400" fill="#57606a">the year of birth</tspan></text>
+    <text x="36" y="248" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#1f2328" xml:space="preserve">    died        INTEGER  NULL      <tspan font-weight="400" fill="#57606a">the year of death; NULL while living</tspan></text>
+    <line x1="24" y1="260" x2="680" y2="260" stroke="#d0d7de"/>
     <text x="36" y="273" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#57606a">idx_head_country_number (country, number)</text>
     <text x="36" y="291" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#57606a">idx_head_name (name)</text>
   </g>
