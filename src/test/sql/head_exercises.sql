@@ -107,9 +107,9 @@ ORDER BY country ASC, MIN(term_start) ASC
 -- Per country, the youngest, the oldest and the average age at which a term began, in whole years of the calendar
 -- (the year of term_start less the year of birth; born is a year, so that is as fine as the data allows).
 SELECT country,
-       MIN(CAST(SUBSTR(term_start, 1, 4) AS INTEGER) - born)             AS youngest,
-       MAX(CAST(SUBSTR(term_start, 1, 4) AS INTEGER) - born)             AS oldest,
-       ROUND(AVG(CAST(SUBSTR(term_start, 1, 4) AS INTEGER) - born), 1)   AS average
+       MIN(CAST(SUBSTR(term_start, 1, 4) AS INTEGER) - born)           AS youngest,
+       MAX(CAST(SUBSTR(term_start, 1, 4) AS INTEGER) - born)           AS oldest,
+       ROUND(AVG(CAST(SUBSTR(term_start, 1, 4) AS INTEGER) - born), 1) AS average
 FROM head
 GROUP BY country
 ORDER BY country ASC
@@ -149,6 +149,36 @@ ORDER BY decade ASC
 ;
 
 
+-- ---------------------------------------------------------------------- HOG-HEAD-I-07 The latest terms of each country
+-- Per country, the :n most recent terms, oldest of them first. Terms, not persons: a head re-elected appears once per
+-- term. term_start is NOT NULL and distinct within a country, so the numbering has no ties.
+SELECT country, number, name, term_start, term_end
+FROM (SELECT h.*, ROW_NUMBER() OVER (PARTITION BY country ORDER BY term_start DESC) AS latest_rn
+      FROM head AS h)
+WHERE latest_rn <= :n
+ORDER BY country ASC, term_start ASC
+;
+
+
+-- -------------------------------------------------------- HOG-HEAD-I-08 The first and the latest terms of each country
+-- Per country, its first :n terms and its most recent :n, each row saying which it is. A row is 'first' when it is
+-- among the first :n, so with a country of 2 * :n terms or fewer the two sets overlap and 'first' wins.
+SELECT country,
+       CASE WHEN first_rn <= :n THEN 'first' ELSE 'latest' END AS which,
+       number,
+       name,
+       term_start,
+       term_end
+FROM (SELECT h.*,
+             ROW_NUMBER() OVER (PARTITION BY country ORDER BY term_start ASC)  AS first_rn,
+             ROW_NUMBER() OVER (PARTITION BY country ORDER BY term_start DESC) AS latest_rn
+      FROM head AS h)
+WHERE first_rn <= :n
+   OR latest_rn <= :n
+ORDER BY country ASC, term_start ASC
+;
+
+
 -- ============================================================================================================ ADVANCED
 
 
@@ -178,10 +208,10 @@ ORDER BY country ASC, term_start ASC
 SELECT country, name, terms, days
 FROM (SELECT country,
              name,
-             COUNT(*)                                                                     AS terms,
-             CAST(SUM(julianday(COALESCE(term_end, date('now'))) - julianday(term_start)) AS INTEGER) AS days,
+             COUNT(*)                                                                                   AS terms,
+             CAST(SUM(julianday(COALESCE(term_end, date('now'))) - julianday(term_start)) AS INTEGER)   AS days,
              RANK() OVER (PARTITION BY country
-                 ORDER BY SUM(julianday(COALESCE(term_end, date('now'))) - julianday(term_start)) DESC)   AS place
+                 ORDER BY SUM(julianday(COALESCE(term_end, date('now'))) - julianday(term_start)) DESC) AS place
       FROM head
       GROUP BY country, name)
 WHERE place = 1
@@ -201,9 +231,9 @@ WITH ordered AS (SELECT country,
                  FROM head),
      runs AS (SELECT country,
                      party,
-                     COUNT(*)                                  AS terms,
-                     MIN(term_start)                           AS since,
-                     MAX(COALESCE(term_end, date('now')))      AS until
+                     COUNT(*)                             AS terms,
+                     MIN(term_start)                      AS since,
+                     MAX(COALESCE(term_end, date('now'))) AS until
               FROM ordered
               GROUP BY country, party, seq - seq_in_party),
      placed AS (SELECT *, RANK() OVER (PARTITION BY country ORDER BY terms DESC, since ASC) AS place
