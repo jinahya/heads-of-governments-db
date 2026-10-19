@@ -209,6 +209,3 @@ fabric.properties
 
 # End of https://www.toptal.com/developers/gitignore/api/jenv
 # ----------------------------------------------------------------------------------------------------------------------
-
-# the generated database; ./mvnw test rebuilds it from src/main/resources/*.asv
-db/*.sqlite3

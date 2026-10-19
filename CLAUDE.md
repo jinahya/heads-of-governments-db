@@ -7,8 +7,8 @@ Guidance for Claude Code when working in this repository.
 A generator, and nothing else. `./mvnw test` reads the lists under `src/main/resources` and writes
 `db/heads_of_governments.sqlite3`, an SQLite database of the heads of government of five countries.
 The project publishes no artifact: there is no main source, the jar is empty, and `maven.install.skip`
-and `maven.deploy.skip` are set. Nothing downstream consumes the build; whoever wants the database
-runs the build and takes the file.
+and `maven.deploy.skip` are set. The generated file is committed, so whoever wants the database can
+take it without building; a change to a list means rebuilding and committing the file with it.
 
 The sibling `../kftc-financial-institution-info` was the model for this, down to the `ANALYZE` and
 `VACUUM` at the end of the run.
@@ -34,7 +34,7 @@ src/test/sql/
   office_exercises.sql, head_exercises.sql             exercises on one table, Basic / Intermediate / Advanced
   whole_schema_exercises.sql                           exercises that read both tables
 db/
-  heads_of_governments.sqlite3                         the output; git-ignored
+  heads_of_governments.sqlite3                         the output; committed, rebuilt on every run
   heads_of_governments.sqlite3.md                      the schema and column notes; committed
 ```
 

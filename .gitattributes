@@ -1,3 +1,6 @@
 # ASCII separated values: US between fields, RS between records, no newlines.
 # A diff would be one unreadable line, so show only that the file changed.
 *.asv -diff
+
+# the generated database, committed so a reader can take it without building; git must not merge or diff it
+*.sqlite3 binary
