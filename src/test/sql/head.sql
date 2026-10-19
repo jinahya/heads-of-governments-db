@@ -22,7 +22,7 @@
 --
 -- CREATE TABLE head (
 --     id         INTEGER PRIMARY KEY,
---     country    TEXT    NOT NULL REFERENCES government (country),
+--     country    TEXT    NOT NULL REFERENCES office (country),
 --     number     INTEGER NOT NULL,
 --     term_start TEXT    NOT NULL,
 --     term_end   TEXT,
@@ -63,11 +63,11 @@ GROUP BY country
 ORDER BY country ASC
 ;
 
--- a head whose country is not a government; the foreign key forbids it while enforced, which the generator does.
+-- a head whose country is not an office; the foreign key forbids it while enforced, which the generator does.
 -- no rows: no orphan.
 SELECT id, country, name
 FROM head
-WHERE country NOT IN (SELECT country FROM government)
+WHERE country NOT IN (SELECT country FROM office)
 ;
 
 
@@ -341,7 +341,7 @@ ORDER BY tbl ASC, idx ASC NULLS FIRST
 ;
 
 -- the foreign keys hold.
--- no rows: no head references a missing government.
+-- no rows: no head references a missing office.
 SELECT *
 FROM pragma_foreign_key_check
 ;

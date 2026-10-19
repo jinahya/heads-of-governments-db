@@ -21,13 +21,13 @@ how you get it. It needs a JDK 25 or newer.
 
 `db/heads_of_governments.sqlite3`, two tables.
 
-| table        | rows | one row is                                                               |
-|--------------|-----:|--------------------------------------------------------------------------|
-| `government` |    5 | a government in the institutional sense, keyed by ISO 3166-1 alpha-2 code |
-| `head`       |  285 | one term of office, keyed by a surrogate `id`                               |
+| table    | rows | one row is                                                                |
+|----------|-----:|---------------------------------------------------------------------------|
+| `office` |    5 | the office the head of government holds, keyed by ISO 3166-1 alpha-2 code |
+| `head`   |  285 | one term of office, keyed by a surrogate `id`                             |
 
 ```sql
-CREATE TABLE government
+CREATE TABLE office
 (
     country    TEXT NOT NULL PRIMARY KEY,                                   -- FR, GB, JP, KR, US
     head_kind  TEXT NOT NULL CHECK (head_kind IN ('PRESIDENT', 'PRIME_MINISTER')),
@@ -38,7 +38,7 @@ CREATE TABLE government
 CREATE TABLE head
 (
     id         INTEGER PRIMARY KEY,                                         -- rowid; regenerated each run
-    country    TEXT    NOT NULL REFERENCES government (country),
+    country    TEXT    NOT NULL REFERENCES office (country),
     number     INTEGER NOT NULL,
     term_start TEXT    NOT NULL,                                            -- yyyy-MM-dd
     term_end   TEXT,                                                        -- NULL for the incumbent
@@ -58,7 +58,7 @@ A term is told apart by `(country, term_start)`; the generator checks that no pa
 the schema declares no constraint on it. `number` could not serve, because it means something
 different in each country -- Japan counts appointments, South Korea elections, the United States
 presidencies, France and the United Kingdom persons -- and the last two repeat it across a person's
-terms. `government.numbering` spells out each country's rule. `id` is the rowid, numbered by country
+terms. `office.numbering` spells out each country's rule. `id` is the rowid, numbered by country
 and then by date as the generator inserts; the file is rebuilt on every run, so do not store an `id`
 anywhere outside the file. The schema declares no uniqueness beyond `id`; the generator checks the
 data once, at build time.
@@ -85,7 +85,7 @@ header row and no comments. The five country lists share one layout, `number`, `
 47|2025-01-20|-|Donald Trump|Republican|1946|-
 ```
 
-`list_of_governments.txt` has `country`, `head_kind`, `head_title`, `numbering`. `party` is one
+`list_of_offices.txt` has `country`, `head_kind`, `head_title`, `numbering`. `party` is one
 token, `_` for a space and `/` between successive affiliations, in the country's own language where
 that is not English.
 
@@ -142,7 +142,7 @@ served non-consecutive terms has one line per term and keeps the same number on 
 [whitehouse.gov archive: chronological list](https://georgewbush-whitehouse.archives.gov/history/presidents/chronological.html).
 `number` is the presidency number: Cleveland appears twice, as 22 and 24, and Trump as 45 and 47.
 
-**Governments** -- [ISO 3166 country codes](https://www.iso.org/iso-3166-country-codes.html),
+**Offices** -- [ISO 3166 country codes](https://www.iso.org/iso-3166-country-codes.html),
 [en.wikipedia: Head of government](https://en.wikipedia.org/wiki/Head_of_government),
 [en.wikipedia: Head of state](https://en.wikipedia.org/wiki/Head_of_state).
 `country` is the ISO 3166-1 alpha-2 code as `java.util.Locale#getCountry()` returns it; the United

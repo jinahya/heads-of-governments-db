@@ -6,7 +6,7 @@ forms of the `.txt` lists beside them. The file is not committed; see `.gitignor
 ## .schema
 
 ```sql
-CREATE TABLE government
+CREATE TABLE office
 (
     country    TEXT NOT NULL PRIMARY KEY,
     head_kind  TEXT NOT NULL CHECK (head_kind IN ('PRESIDENT', 'PRIME_MINISTER')),
@@ -16,7 +16,7 @@ CREATE TABLE government
 CREATE TABLE head
 (
     id         INTEGER PRIMARY KEY,
-    country    TEXT    NOT NULL REFERENCES government (country),
+    country    TEXT    NOT NULL REFERENCES office (country),
     number     INTEGER NOT NULL,
     term_start TEXT    NOT NULL,
     term_end   TEXT,
@@ -31,15 +31,15 @@ CREATE INDEX idx_head_country_number ON head (country, number);
 CREATE INDEX idx_head_name ON head (name);
 ```
 
-## `government`
+## `office`
 
-A government in the institutional sense -- the Government of Japan, HM Government, 대한민국 정부 --
-which is permanent and has one head at a time. One row per country.
+The office the head of government holds -- 内閣総理大臣, 대통령, Président de la République -- which is
+permanent and has one holder at a time. One row per country.
 
 | name         | description                                                     | notes                              |
 |--------------|-----------------------------------------------------------------|------------------------------------|
 | `country`    | ISO 3166-1 alpha-2 code, as `java.util.Locale#getCountry()`     | `FR`, `GB`, `JP`, `KR`, `US`       |
-| `head_kind`  | what the head of this government is                             | `PRESIDENT` or `PRIME_MINISTER`    |
+| `head_kind`  | what the head of this office is                                 | `PRESIDENT` or `PRIME_MINISTER`    |
 | `head_title` | the head's title in the country's own language                  | e.g. `内閣総理大臣`                  |
 | `numbering`  | what `head.number` counts for this country                      | free text                          |
 
@@ -55,8 +55,8 @@ keep a person's number across terms.
 | name         | description                                   | notes                                        |
 |--------------|-----------------------------------------------|----------------------------------------------|
 | `id`         | the row's key                                 | rowid; 1..285 by `country`, then `term_start`, in this run |
-| `country`    | the government's country                      | references `government`                      |
-| `number`     | the term number                               | counted as `government.numbering` says       |
+| `country`    | the office's country                          | references `office`                          |
+| `number`     | the term number                               | counted as `office.numbering` says           |
 | `term_start` | the first day of the term                     | ISO-8601 date, `yyyy-MM-dd`                  |
 | `term_end`   | the last day of the term                      | ISO-8601 date; `NULL` for the incumbent      |
 | `name`       | the person's name                             | in the source's script                       |
@@ -66,7 +66,7 @@ keep a person's number across terms.
 
 The schema declares no uniqueness beyond `id`, by decision: the file is built for its readers, and
 the generator checks the data once, at build time, that every `(country, term_start)` is distinct and
-that each government has exactly one row with `term_end IS NULL`.
+that each office has exactly one row with `term_end IS NULL`.
 
 The dates are text, SQLite's own convention, so `WHERE term_start <= '1990-01-01' AND (term_end IS NULL OR term_end >= '1990-01-01')`
 finds who held office on a day, and `date()` / `julianday()` work on them directly.

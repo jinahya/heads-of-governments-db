@@ -25,17 +25,17 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * A government, in the institutional sense, one per line of {@code list_of_governments.txt}.
+ * The office a head of government holds, one per line of {@code list_of_offices.txt}.
  *
  * @param country   the ISO 3166-1 alpha-2 code of the country, as {@link java.util.Locale#getCountry()} returns it.
- * @param headKind  what the head of this government is; one of {@link #HEAD_KINDS}.
+ * @param headKind  what the head of this office is; one of {@link #HEAD_KINDS}.
  * @param headTitle the head's title in the country's own language.
  * @param numbering what the {@code number} column of the heads list counts for this country.
  */
-record Government(String country, String headKind, String headTitle, String numbering) {
+record Office(String country, String headKind, String headTitle, String numbering) {
 
-    /** The name of the resource holding the governments, in ASCII separated values. */
-    static final String RESOURCE_NAME = "list_of_governments.asv";
+    /** The name of the resource holding the offices, in ASCII separated values. */
+    static final String RESOURCE_NAME = "list_of_offices.asv";
 
     /** The number of fields of a record. */
     static final int FIELDS = 4;
@@ -51,26 +51,26 @@ record Government(String country, String headKind, String headTitle, String numb
      * @param fields the fields; {@value #FIELDS} of them.
      * @return a new instance.
      */
-    static Government from(final String[] fields) {
+    static Office from(final String[] fields) {
         Objects.requireNonNull(fields, "fields is null");
         if (fields.length != FIELDS) {
             throw new IllegalArgumentException("expected " + FIELDS + " fields, got " + fields.length);
         }
-        return new Government(fields[0], fields[1], fields[2], fields[3]);
+        return new Office(fields[0], fields[1], fields[2], fields[3]);
     }
 
     /**
-     * Reads every government from {@link #RESOURCE_NAME}.
+     * Reads every office from {@link #RESOURCE_NAME}.
      *
      * @return a list of governments, in file order.
      * @throws IOException if the resource cannot be read.
      */
-    static List<Government> readAll() throws IOException {
-        return _Asv.read(RESOURCE_NAME).stream().map(Government::from).toList();
+    static List<Office> readAll() throws IOException {
+        return _Asv.read(RESOURCE_NAME).stream().map(Office::from).toList();
     }
 
     // -----------------------------------------------------------------------------------------------------------------
-    Government {
+    Office {
         Objects.requireNonNull(country, "country is null");
         Objects.requireNonNull(headKind, "headKind is null");
         Objects.requireNonNull(headTitle, "headTitle is null");

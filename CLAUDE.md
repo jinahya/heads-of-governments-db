@@ -17,8 +17,8 @@ The sibling `../kftc-financial-institution-info` was the model for this, down to
 
 ```
 src/main/resources/
-  list_of_governments.txt                              the five governments, hand-edited
-  list_of_governments.asv                              the same, flattened (generated)
+  list_of_offices.txt                                  the five offices, hand-edited
+  list_of_offices.asv                                  the same, flattened (generated)
   list_of_presidents_of_france.txt / .asv              one country's heads, hand-edited / flattened
   list_of_presidents_of_japan.txt / .asv
   list_of_presidents_of_south_korea.txt / .asv
@@ -26,12 +26,12 @@ src/main/resources/
   list_of_prime_ministers_of_the_united_kingdom.txt / .asv
 src/test/java/com/github/jinahya/headsofgovernments/
   _Asv.java                                            reads .asv; flattens a delimited .txt to .asv
-  Government.java, Head.java                           records, one per table, each with from(String[])
+  Office.java, Head.java                               records, one per table, each with from(String[])
   _Asv_Test.java                                       the .asv files are current and parse as expected
   HeadsOfGovernments_Sqlite_Test.java                  the generator; holds the DDL
 src/test/sql/
-  government.sql, head.sql                             profiling queries, a section per column
-  government_exercises.sql, head_exercises.sql         exercises on one table, Basic / Intermediate / Advanced
+  office.sql, head.sql                                 profiling queries, a section per column
+  office_exercises.sql, head_exercises.sql             exercises on one table, Basic / Intermediate / Advanced
   whole_schema_exercises.sql                           exercises that read both tables
 db/
   heads_of_governments.sqlite3                         the output; git-ignored
@@ -44,7 +44,7 @@ db/
 between fields, no header row, no comments. The five country lists share one layout,
 `number, term_start, term_end, name, party, born, died`; `-` means "none" (the incumbent's `term_end`,
 a living person's `died`). What `number` counts differs by country and is written in
-`list_of_governments.txt`, column `numbering`. The sources of every list and the editorial notes --
+`list_of_offices.txt`, column `numbering`. The sources of every list and the editorial notes --
 who is left out, how a suspension or a re-election is written -- live in README.md under *Sources
 and notes*, and a change to a list's conventions is a change there too.
 
@@ -73,13 +73,13 @@ the `.txt` in the build, as the `.asv` and the database are.
 
 ## The schema
 
-Two tables, `government` (`WITHOUT ROWID`) and `head` (a rowid table). The DDL lives in
+Two tables, `office` (`WITHOUT ROWID`) and `head` (a rowid table). The DDL lives in
 `HeadsOfGovernments_Sqlite_Test.DDL` and is repeated in `db/heads_of_governments.sqlite3.md`; **a
 change to one is a change to both.**
 
-- `government` is a government in the institutional sense -- the Government of Japan, HM Government
-  -- not an administration. Key `country`, ISO 3166-1 alpha-2 as `Locale.getCountry()` returns it:
-  the United Kingdom is `GB`. `head_kind` is `PRESIDENT` or `PRIME_MINISTER`, checked.
+- `office` is the office the head of government holds -- 内閣総理大臣, 대통령, the Prime Minister --
+  not an administration or a government. Key `country`, ISO 3166-1 alpha-2 as `Locale.getCountry()`
+  returns it: the United Kingdom is `GB`. `head_kind` is `PRESIDENT` or `PRIME_MINISTER`, checked.
 - `head` is one term of office. Key `id INTEGER PRIMARY KEY`, the rowid, which SQLite assigns as the
   generator inserts; the generator sorts by `country` then `term_start` first, so ids are 1..N in that
   order, but the file is rebuilt on every run and an `id` is never stable. What tells terms apart is
@@ -88,11 +88,11 @@ change to one is a change to both.**
   `(country, term_start)`, by decision; the generator asserts it after the inserts instead. Dates are
   ISO-8601 text, SQLite's convention. `term_end IS NULL` is the incumbent.
 - Indexes: `(country, number)` and `(name)`, both plain. There is no unique index on the incumbent,
-  by decision: the schema is for consumers, and the generator asserts one incumbent per government
+  by decision: the schema is for consumers, and the generator asserts one incumbent per office
   after the inserts instead.
 
 Names are country codes and snake_case; keep them so. If a country ever contributes a second office
-(South Korea has a prime minister too), the key of `government` becomes `(country, head_kind)` and
+(South Korea has a prime minister too), the key of `office` becomes `(country, head_kind)` and
 `head` references both columns; `id` is unaffected.
 
 ## The SQL files
@@ -102,7 +102,7 @@ Names are country codes and snake_case; keep them so. If a country ever contribu
 `sqlite3` tool or an IDE, and `sqlite3 db/heads_of_governments.sqlite3 '.read src/test/sql/head.sql'`
 runs one whole.
 
-- `government.sql` and `head.sql` profile a table, a section per column under a ruler, each query
+- `office.sql` and `head.sql` profile a table, a section per column under a ruler, each query
   prefaced by what it looks for and what the result should be; `-- no rows:` marks a check that passes
   when nothing comes back. The last section covers the table as a whole.
 - `*_exercises.sql` pose a problem per query, under `BASIC`, `INTERMEDIATE` and `ADVANCED` rulers. Each
@@ -144,7 +144,7 @@ only dependency with native code; it loads its own library and needs nothing ins
 ## Conventions
 
 - Test classes are package-private and named `Xxx_Test`; internal helpers carry a leading
-  underscore (`_Asv`). Record types are named for what a row is (`Government`, `Head`).
+  underscore (`_Asv`). Record types are named for what a row is (`Office`, `Head`).
 - Every Java file carries the Apache 2.0 header in the `#%L` form the license plugin produces.
 - Prose about the data (README.md, the schema notes) is English; data values keep the script of
   their source (`内閣総理大臣`, `대통령`, `Président de la République`).

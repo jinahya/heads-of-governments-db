@@ -42,14 +42,14 @@ class HeadsOfGovernments_Sqlite_Test {
     /** The file to generate, relative to the project directory, which is where surefire runs. */
     static final Path PATH = Path.of("db", "heads_of_governments.sqlite3");
 
-    static final String TABLE_GOVERNMENT = "government";
+    static final String TABLE_OFFICE = "office";
 
     static final String TABLE_HEAD = "head";
 
     /** The schema, in execution order. */
     static final List<String> DDL = List.of(
             """
-            CREATE TABLE government (
+            CREATE TABLE office (
                 country    TEXT NOT NULL PRIMARY KEY,
                 head_kind  TEXT NOT NULL CHECK (head_kind IN ('PRESIDENT', 'PRIME_MINISTER')),
                 head_title TEXT NOT NULL,
@@ -60,7 +60,7 @@ class HeadsOfGovernments_Sqlite_Test {
             """
             CREATE TABLE head (
                 id         INTEGER PRIMARY KEY,
-                country    TEXT    NOT NULL REFERENCES government (country),
+                country    TEXT    NOT NULL REFERENCES office (country),
                 number     INTEGER NOT NULL,
                 term_start TEXT    NOT NULL,
                 term_end   TEXT,
@@ -94,18 +94,18 @@ class HeadsOfGovernments_Sqlite_Test {
     }
 
     // -----------------------------------------------------------------------------------------------------------------
-    static int insertGovernments(final Connection connection, final List<Government> governments)
+    static int insertOffices(final Connection connection, final List<Office> offices)
             throws SQLException {
         final var sql = """
-                INSERT INTO government (country, head_kind, head_title, numbering)
+                INSERT INTO office (country, head_kind, head_title, numbering)
                 VALUES (?, ?, ?, ?)""";
         var inserted = 0;
         try (var statement = connection.prepareStatement(sql)) {
-            for (final var government : governments) {
-                statement.setString(1, government.country());
-                statement.setString(2, government.headKind());
-                statement.setString(3, government.headTitle());
-                statement.setString(4, government.numbering());
+            for (final var office : offices) {
+                statement.setString(1, office.country());
+                statement.setString(2, office.headKind());
+                statement.setString(3, office.headTitle());
+                statement.setString(4, office.numbering());
                 inserted += statement.executeUpdate();
             }
         }
@@ -150,9 +150,9 @@ class HeadsOfGovernments_Sqlite_Test {
                     .as("%s.asv is not %s.txt flattened; regenerate it first", baseName, baseName)
                     .isEqualTo(_Asv.flattenResource(baseName + ".txt"));
         }
-        final var governments = Government.readAll();
-        final var heads = governments.stream()
-                .map(Government::country)
+        final var offices = Office.readAll();
+        final var heads = offices.stream()
+                .map(Office::country)
                 .sorted()
                 .flatMap(c -> {
                     try {
@@ -175,7 +175,7 @@ class HeadsOfGovernments_Sqlite_Test {
                 execute(connection, ddl);
             }
             connection.setAutoCommit(false);
-            assertThat(insertGovernments(connection, governments)).isEqualTo(governments.size());
+            assertThat(insertOffices(connection, offices)).isEqualTo(offices.size());
             assertThat(insertHeads(connection, heads)).isEqualTo(heads.size());
             connection.commit();
             connection.setAutoCommit(true);
@@ -184,7 +184,7 @@ class HeadsOfGovernments_Sqlite_Test {
         }
         // reopen and check
         try (var connection = DriverManager.getConnection(url())) {
-            assertThat(count(connection, "SELECT COUNT(*) FROM government")).isEqualTo(5);
+            assertThat(count(connection, "SELECT COUNT(*) FROM office")).isEqualTo(5);
             assertThat(count(connection, "SELECT COUNT(*) FROM head")).isEqualTo(heads.size()).isEqualTo(285);
             for (final var e : Map.of("FR", 31, "GB", 81, "JP", 105, "KR", 21, "US", 47).entrySet()) {
                 assertThat(count(connection, "SELECT COUNT(*) FROM head WHERE country = '" + e.getKey() + "'"))
@@ -196,7 +196,7 @@ class HeadsOfGovernments_Sqlite_Test {
                     .as("(country, term_start) duplicates").isZero();
             assertThat(count(connection, "SELECT COUNT(*) FROM head WHERE term_end IS NULL"))
                     .as("incumbents").isEqualTo(5);
-            assertThat(count(connection, "SELECT COUNT(*) FROM head WHERE country NOT IN (SELECT country FROM government)"))
+            assertThat(count(connection, "SELECT COUNT(*) FROM head WHERE country NOT IN (SELECT country FROM office)"))
                     .as("orphans").isZero();
             assertThat(count(connection, "SELECT COUNT(*) FROM pragma_foreign_key_check")).as("foreign_key_check rows").isZero();
             assertThat(count(connection, "SELECT COUNT(*) FROM sqlite_stat1")).as("ANALYZE ran").isPositive();

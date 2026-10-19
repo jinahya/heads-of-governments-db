@@ -17,7 +17,7 @@
 -- #L%
 ---
 --
--- Exercises on government, a problem per query that reads government alone; Basic, then Intermediate, then Advanced.
+-- Exercises on office, a problem per query that reads office alone; Basic, then Intermediate, then Advanced.
 -- Each problem states the request it answers, then the SQL that answers it.
 --
 -- Parameters are bind variables (:name); the sqlite3 shell binds one with `.parameter set :name 'value'`, and an IDE
@@ -28,18 +28,18 @@
 -- =============================================================================================================== BASIC
 
 
--- ------------------------------------------------------------------------- HOG-GOVERNMENT-B-01 A government by country
--- A reader has a country code, typed in whatever case, and wants that government.
+-- -------------------------------------------------------------------------------- HOG-OFFICE-B-01 An office by country
+-- A reader has a country code, typed in whatever case, and wants that office.
 SELECT country, head_kind, head_title, numbering
-FROM government
+FROM office
 WHERE country = UPPER(:country)
 ;
 
 
--- --------------------------------------------------------------------------------- HOG-GOVERNMENT-B-02 The governments
--- The front page lists every government with the title of its head, by country code.
+-- ----------------------------------------------------------------------------------------- HOG-OFFICE-B-02 The offices
+-- The front page lists every office with the title of its head, by country code.
 SELECT country, head_kind, head_title
-FROM government
+FROM office
 ORDER BY country ASC
 ;
 
@@ -47,21 +47,21 @@ ORDER BY country ASC
 -- ======================================================================================================== INTERMEDIATE
 
 
--- ----------------------------------------------------------------- HOG-GOVERNMENT-I-01 Governments by the kind of head
--- How many governments have a president and how many a prime minister, naming the countries of each.
-SELECT head_kind, COUNT(*) AS governments, GROUP_CONCAT(country, ', ' ORDER BY country) AS countries
-FROM government
+-- ------------------------------------------------------------------------- HOG-OFFICE-I-01 Offices by the kind of head
+-- How many offices have a president and how many a prime minister, naming the countries of each.
+SELECT head_kind, COUNT(*) AS offices, GROUP_CONCAT(country, ', ' ORDER BY country) AS countries
+FROM office
 GROUP BY head_kind
 ORDER BY head_kind ASC
 ;
 
 
--- ---------------------------------------------------------------------------- HOG-GOVERNMENT-I-02 Titles outside ASCII
+-- -------------------------------------------------------------------------------- HOG-OFFICE-I-02 Titles outside ASCII
 -- head_title is in the country's own language. Which titles use a character outside ASCII, and which do not?
 SELECT country,
        head_title,
        CASE WHEN head_title GLOB '*[^ -~]*' THEN 'non-ASCII' ELSE 'ASCII' END AS script
-FROM government
+FROM office
 ORDER BY script ASC, country ASC
 ;
 
@@ -69,9 +69,9 @@ ORDER BY script ASC, country ASC
 -- ============================================================================================================ ADVANCED
 
 
--- ----------------------------------------------------------------- HOG-GOVERNMENT-A-01 What number counts, in a phrase
+-- --------------------------------------------------------------------- HOG-OFFICE-A-01 What number counts, in a phrase
 -- numbering is a sentence, but each opens by naming what is counted -- 'ordinal of the person by first election',
--- '代', '대', 'presidency number' -- before its first comma or semicolon. Show each government with that phrase alone.
+-- '代', '대', 'presidency number' -- before its first comma or semicolon. Show each office with that phrase alone.
 SELECT country,
        CASE
            WHEN comma > 0 AND (semicolon = 0 OR comma < semicolon) THEN SUBSTR(numbering, 1, comma - 1)
@@ -79,6 +79,6 @@ SELECT country,
            ELSE numbering
            END AS counts
 FROM (SELECT country, numbering, INSTR(numbering, ',') AS comma, INSTR(numbering, ';') AS semicolon
-      FROM government)
+      FROM office)
 ORDER BY country ASC
 ;

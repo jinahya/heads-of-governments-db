@@ -28,8 +28,8 @@ import java.util.Objects;
 /**
  * One term of a head of government, one per line of a country's list file.
  *
- * @param country   the ISO 3166-1 alpha-2 code of the government's country.
- * @param number    the term number, counted as the government's {@code numbering} says.
+ * @param country   the ISO 3166-1 alpha-2 code of the office's country.
+ * @param number    the term number, counted as the office's {@code numbering} says.
  * @param termStart the first day of the term.
  * @param termEnd   the last day of the term, or {@code null} for the incumbent.
  * @param name      the name of the person.

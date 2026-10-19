@@ -31,7 +31,7 @@
 -- ------------------------------------------------------------------- HOG-SCHEMA-B-01 The incumbents, with their titles
 -- The front page names each country's head of government today, with the title the country gives the office.
 SELECT g.country, g.head_title, h.name, h.term_start
-FROM government g
+FROM office g
          JOIN head h ON h.country = g.country AND h.term_end IS NULL
 ORDER BY g.country ASC
 ;
@@ -40,17 +40,17 @@ ORDER BY g.country ASC
 -- ----------------------------------------------------- HOG-SCHEMA-B-02 A country's list, with the rule for its numbers
 -- A reader asks for one country's list and should see, with it, what number counts there.
 SELECT g.head_title, g.numbering, h.number, h.term_start, h.term_end, h.name, h.party
-FROM government g
+FROM office g
          JOIN head h ON h.country = g.country
 WHERE g.country = :country
 ORDER BY h.term_start ASC
 ;
 
 
--- -------------------------------------------------------------------------------- HOG-SCHEMA-B-03 Terms per government
--- Each government with the kind of head it has and how many terms the list holds.
+-- ------------------------------------------------------------------------------------ HOG-SCHEMA-B-03 Terms per office
+-- Each office with the kind of head it has and how many terms the list holds.
 SELECT g.country, g.head_kind, COUNT(h.id) AS terms
-FROM government g
+FROM office g
          LEFT JOIN head h ON h.country = g.country
 GROUP BY g.country, g.head_kind
 ORDER BY g.country ASC
@@ -67,7 +67,7 @@ SELECT g.head_kind,
        COUNT(*)                                                                                       AS terms,
        COUNT(DISTINCT g.country || ' ' || h.name)                                                     AS persons,
        CAST(AVG(julianday(COALESCE(h.term_end, date('now'))) - julianday(h.term_start)) AS INTEGER)   AS average_days
-FROM government g
+FROM office g
          JOIN head h ON h.country = g.country
 GROUP BY g.head_kind
 ORDER BY g.head_kind ASC
@@ -75,14 +75,14 @@ ORDER BY g.head_kind ASC
 
 
 -- ------------------------------------------------------------------------------- HOG-SCHEMA-I-02 Numbering in practice
--- Per government: how many terms, how many distinct numbers, the highest number, and the rule; where terms exceed
+-- Per office: how many terms, how many distinct numbers, the highest number, and the rule; where terms exceed
 -- numbers, number is the person's and repeats.
 SELECT g.country,
        COUNT(*)                 AS terms,
        COUNT(DISTINCT h.number) AS numbers,
        MAX(h.number)            AS highest,
        g.numbering
-FROM government g
+FROM office g
          JOIN head h ON h.country = g.country
 GROUP BY g.country, g.numbering
 ORDER BY g.country ASC
@@ -90,14 +90,14 @@ ORDER BY g.country ASC
 
 
 -- ------------------------------------------------------------------------------- HOG-SCHEMA-I-03 The span of each list
--- Per government, the first term's start, the latest term's start and the years between them, with the head's title.
+-- Per office, the first term's start, the latest term's start and the years between them, with the head's title.
 SELECT g.country,
        g.head_title,
        MIN(h.term_start)                                         AS first_term_start,
        MAX(h.term_start)                                         AS latest_term_start,
        CAST(SUBSTR(MAX(h.term_start), 1, 4) AS INTEGER)
            - CAST(SUBSTR(MIN(h.term_start), 1, 4) AS INTEGER)    AS years
-FROM government g
+FROM office g
          JOIN head h ON h.country = g.country
 GROUP BY g.country, g.head_title
 ORDER BY g.country ASC
@@ -107,8 +107,8 @@ ORDER BY g.country ASC
 -- ============================================================================================================ ADVANCED
 
 
--- -------------------------------------------------------------- HOG-SCHEMA-A-01 Each government's longest-serving head
--- Per government, the person with the most days in office over all their terms, with the title they held; ties
+-- ------------------------------------------------------------------ HOG-SCHEMA-A-01 Each office's longest-serving head
+-- Per office, the person with the most days in office over all their terms, with the title they held; ties
 -- share the place.
 SELECT country, head_title, name, terms, days
 FROM (SELECT g.country,
@@ -118,7 +118,7 @@ FROM (SELECT g.country,
              CAST(SUM(julianday(COALESCE(h.term_end, date('now'))) - julianday(h.term_start)) AS INTEGER) AS days,
              RANK() OVER (PARTITION BY g.country
                  ORDER BY SUM(julianday(COALESCE(h.term_end, date('now'))) - julianday(h.term_start)) DESC) AS place
-      FROM government g
+      FROM office g
                JOIN head h ON h.country = g.country
       GROUP BY g.country, g.head_title, h.name)
 WHERE place = 1
@@ -126,11 +126,11 @@ ORDER BY country ASC
 ;
 
 
--- ------------------------------------------------------------ HOG-SCHEMA-A-02 Every government on a day, vacant or not
--- A reader gives a date and wants every government with its head on that day, or 'vacant' where the office was empty
+-- ---------------------------------------------------------------- HOG-SCHEMA-A-02 Every office on a day, vacant or not
+-- A reader gives a date and wants every office with its head on that day, or 'vacant' where the office was empty
 -- or the list had not yet begun.
 SELECT g.country, g.head_title, COALESCE(h.name, '(vacant)') AS name, h.term_start, h.term_end
-FROM government g
+FROM office g
          LEFT JOIN head h ON h.country = g.country
     AND h.term_start <= :date
     AND (h.term_end IS NULL OR h.term_end >= :date)
@@ -139,7 +139,7 @@ ORDER BY g.country ASC
 
 
 -- ---------------------------------------------------------------------- HOG-SCHEMA-A-03 The incumbents' contemporaries
--- On the day each incumbent took office, who headed the other governments? One row per pair, the incumbent first.
+-- On the day each incumbent took office, who headed the other offices? One row per pair, the incumbent first.
 SELECT i.country     AS country,
        i.name        AS incumbent,
        i.term_start  AS since,
@@ -150,7 +150,7 @@ FROM head i
          JOIN head o ON o.country <> i.country
     AND o.term_start <= i.term_start
     AND (o.term_end IS NULL OR o.term_end >= i.term_start)
-         JOIN government g ON g.country = o.country
+         JOIN office g ON g.country = o.country
 WHERE i.term_end IS NULL
 ORDER BY i.country ASC, o.country ASC
 ;

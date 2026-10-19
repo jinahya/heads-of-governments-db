@@ -36,7 +36,7 @@ class _Asv_Test {
 
     /** Every list, by base name; each exists as {@code .txt} (the source) and {@code .asv} (the flattened form). */
     static final String[] BASE_NAMES = {
-            "list_of_governments",
+            "list_of_offices",
             "list_of_presidents_of_france",
             "list_of_presidents_of_japan",
             "list_of_presidents_of_south_korea",
@@ -47,7 +47,7 @@ class _Asv_Test {
     // -----------------------------------------------------------------------------------------------------------------
     @ParameterizedTest
     @ValueSource(strings = {
-            "list_of_governments",
+            "list_of_offices",
             "list_of_presidents_of_france",
             "list_of_presidents_of_japan",
             "list_of_presidents_of_south_korea",
@@ -66,7 +66,7 @@ class _Asv_Test {
 
     @ParameterizedTest
     @ValueSource(strings = {
-            "list_of_governments",
+            "list_of_offices",
             "list_of_presidents_of_france",
             "list_of_presidents_of_japan",
             "list_of_presidents_of_south_korea",
@@ -128,19 +128,19 @@ class _Asv_Test {
 
     // -----------------------------------------------------------------------------------------------------------------
     @Test
-    void governments_parse() throws Exception {
-        final var governments = Government.readAll();
-        assertThat(governments).hasSize(5);
+    void offices_parse() throws Exception {
+        final var offices = Office.readAll();
+        assertThat(offices).hasSize(5);
         final var isoCountries = Set.of(Locale.getISOCountries());
-        assertThat(governments)
-                .extracting(Government::country)
+        assertThat(offices)
+                .extracting(Office::country)
                 .doesNotHaveDuplicates()
                 .allSatisfy(c -> assertThat(c).isIn(isoCountries))
                 .containsExactlyInAnyOrderElementsOf(Head.RESOURCE_NAMES.keySet());
-        assertThat(governments).extracting(Government::headKind).allSatisfy(k -> assertThat(k).isIn(Government.HEAD_KINDS));
-        assertThat(governments).allSatisfy(g -> {
-            assertThat(g.headTitle()).isNotBlank();
-            assertThat(g.numbering()).isNotBlank();
+        assertThat(offices).extracting(Office::headKind).allSatisfy(k -> assertThat(k).isIn(Office.HEAD_KINDS));
+        assertThat(offices).allSatisfy(o -> {
+            assertThat(o.headTitle()).isNotBlank();
+            assertThat(o.numbering()).isNotBlank();
         });
     }
 
