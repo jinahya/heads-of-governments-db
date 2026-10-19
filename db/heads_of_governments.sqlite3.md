@@ -31,6 +31,38 @@ CREATE INDEX idx_head_country_number ON head (country, number);
 CREATE INDEX idx_head_name ON head (name);
 ```
 
+## As a diagram
+
+```mermaid
+erDiagram
+    office ||--o{ head : "is held by"
+
+    office {
+        TEXT    country    PK "ISO 3166-1 alpha-2, as Locale.getCountry() returns it"
+        TEXT    head_kind     "PRESIDENT or PRIME_MINISTER, checked"
+        TEXT    head_title    "the head's title in the country's own language"
+        TEXT    numbering     "what head.number counts for this country"
+    }
+
+    head {
+        INTEGER id         PK "the rowid; assigned by the generator, not stable across runs"
+        TEXT    country    FK "references office (country)"
+        INTEGER number        "the term number, counted as office.numbering says"
+        TEXT    term_start    "ISO 8601 calendar date (yyyy-MM-dd)"
+        TEXT    term_end      "ISO 8601 calendar date (yyyy-MM-dd); NULL for the incumbent"
+        TEXT    name          "the person's name, in the source's script"
+        TEXT    party         "one token; / separates successive parties"
+        INTEGER born          "the year of birth"
+        INTEGER died          "the year of death; NULL while living"
+    }
+```
+
+The crow's foot is what the schema declares: a head belongs to exactly one office, and nothing stops
+an office from having no head. The generator asserts the rest after the inserts -- every office has
+at least one term, exactly one with `term_end IS NULL`, and no `(country, term_start)` repeats -- so
+the file as built is stricter than the diagram. The same diagram as an image, drawn from the DDL by
+the build and not by hand: [heads_of_governments.sqlite3.erd.svg](heads_of_governments.sqlite3.erd.svg).
+
 ## `office`
 
 The office the head of government holds -- 内閣総理大臣, 대통령, Président de la République -- which is

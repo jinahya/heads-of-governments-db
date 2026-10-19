@@ -29,13 +29,15 @@ src/test/java/com/github/jinahya/headsofgovernments/
   Office.java, Head.java                               records, one per table, each with from(String[])
   _Asv_Test.java                                       the .asv files are current and parse as expected
   HeadsOfGovernments_Sqlite_Test.java                  the generator; holds the DDL
+  HeadsOfGovernments_Erd_Test.java                     draws the ERD .svg from the DDL
 src/test/sql/
   office.sql, head.sql                                 profiling queries, a section per column
   office_exercises.sql, head_exercises.sql             exercises on one table, Basic / Intermediate / Advanced
   whole_schema_exercises.sql                           exercises that read both tables
 db/
   heads_of_governments.sqlite3                         the output; committed, rebuilt on every run
-  heads_of_governments.sqlite3.md                      the schema and column notes; committed
+  heads_of_governments.sqlite3.md                      the schema, a Mermaid ERD and column notes; committed
+  heads_of_governments.sqlite3.erd.svg                 the ERD as an image; generated, committed
 ```
 
 ## The data files, and which one is the truth
@@ -74,8 +76,10 @@ the `.txt` in the build, as the `.asv` and the database are.
 ## The schema
 
 Two tables, `office` (`WITHOUT ROWID`) and `head` (a rowid table). The DDL lives in
-`HeadsOfGovernments_Sqlite_Test.DDL` and is repeated in `db/heads_of_governments.sqlite3.md`; **a
-change to one is a change to both.**
+`HeadsOfGovernments_Sqlite_Test.DDL` and is repeated in `db/heads_of_governments.sqlite3.md`, as SQL and
+as a Mermaid ERD; **a change to one is a change to both.** The `.erd.svg` beside them is not a third
+copy: `HeadsOfGovernments_Erd_Test` draws it from the DDL on every build, through the `PRAGMA`s of an
+in-memory database, so it only needs committing.
 
 - `office` is the office the head of government holds -- 内閣総理大臣, 대통령, the Prime Minister --
   not an administration or a government. Key `country`, ISO 3166-1 alpha-2 as `Locale.getCountry()`
