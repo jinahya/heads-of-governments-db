@@ -29,6 +29,10 @@ src/test/java/com/github/jinahya/headsofgovernments/
   Government.java, Head.java                           records, one per table, each with from(String[])
   _Asv_Test.java                                       the .asv files are current and parse as expected
   HeadsOfGovernments_Sqlite_Test.java                  the generator; holds the DDL
+src/test/sql/
+  government.sql, head.sql                             profiling queries, a section per column
+  government_exercises.sql, head_exercises.sql         exercises on one table, Basic / Intermediate / Advanced
+  whole_schema_exercises.sql                           exercises that read both tables
 db/
   heads_of_governments.sqlite3                         the output; git-ignored
   heads_of_governments.sqlite3.md                      the schema and column notes; committed
@@ -90,6 +94,26 @@ change to one is a change to both.**
 Names are country codes and snake_case; keep them so. If a country ever contributes a second office
 (South Korea has a prime minister too), the key of `government` becomes `(country, head_kind)` and
 `head` references both columns; `id` is unaffected.
+
+## The SQL files
+
+`src/test/sql` holds hand-written SQL against the generated database, after the sibling
+`../oracle-sample-schemas-persistence`. Nothing runs them in the build; they are for a reader with the
+`sqlite3` tool or an IDE, and `sqlite3 db/heads_of_governments.sqlite3 '.read src/test/sql/head.sql'`
+runs one whole.
+
+- `government.sql` and `head.sql` profile a table, a section per column under a ruler, each query
+  prefaced by what it looks for and what the result should be; `-- no rows:` marks a check that passes
+  when nothing comes back. The last section covers the table as a whole.
+- `*_exercises.sql` pose a problem per query, under `BASIC`, `INTERMEDIATE` and `ADVANCED` rulers. Each
+  carries an id, `HOG-<TABLE>-<B|I|A>-<nn>` (`HOG-SCHEMA-` for the whole schema), and restates the
+  request it answers. Parameters are bind variables (`:name`); the shell binds one with
+  `.parameter set :name 'value'`.
+
+Every file starts with the Apache 2.0 header in the `-- #%L` form, rulers are 120 columns, and lines
+stay within 120. A sort key that can be NULL (`term_end`, `died`, an aggregate of either, `sqlite_stat1.idx`)
+says `NULLS FIRST` or `NULLS LAST`, even where that is SQLite's default; a `NOT NULL` key does not. A change to the schema or to a list's conventions can falsify a `no rows:` claim or
+a comment that names a country, so rerun the files after one and read what they return.
 
 ## Build
 
