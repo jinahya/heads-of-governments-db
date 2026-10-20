@@ -33,6 +33,7 @@
 --     CHECK (term_end IS NULL OR term_end >= term_start),
 --     CHECK (died IS NULL OR died >= born)
 -- )
+-- CREATE UNIQUE INDEX idx_head_country_term_start ON head (country, term_start)
 -- CREATE INDEX idx_head_country_number ON head (country, number)
 -- CREATE INDEX idx_head_name ON head (name)
 --
@@ -137,7 +138,7 @@ WHERE term_start NOT GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'
    OR date(term_start) IS NOT term_start
 ;
 
--- two terms of one country starting on the same day; the generator refuses it, the schema does not.
+-- two terms of one country starting on the same day; the unique index idx_head_country_term_start refuses it.
 -- no rows: (country, term_start) is distinct.
 SELECT country, term_start, COUNT(*) AS terms
 FROM head

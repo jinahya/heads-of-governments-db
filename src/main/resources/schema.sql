@@ -34,7 +34,7 @@ CREATE TABLE office (
 ) WITHOUT ROWID;
 
 -- id is the rowid, so SQLite assigns it; the generator inserts by country then term_start, so it is 1..N in that
--- order. No uniqueness is declared on (country, term_start); the generator checks it instead.
+-- order. id is a surrogate; (country, term_start) is the business key, declared by idx_head_country_term_start.
 CREATE TABLE head (
     -- one term of a head of government
     id         INTEGER PRIMARY KEY,                          -- the rowid; assigned by the build, not stable
@@ -49,6 +49,8 @@ CREATE TABLE head (
     CHECK (term_end IS NULL OR term_end >= term_start),
     CHECK (died IS NULL OR died >= born)
 );
+
+CREATE UNIQUE INDEX idx_head_country_term_start ON head (country, term_start);
 
 CREATE INDEX idx_head_country_number ON head (country, number);
 

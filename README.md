@@ -51,18 +51,19 @@ CREATE TABLE head (
     CHECK (died IS NULL OR died >= born)
 );
 
+CREATE UNIQUE INDEX idx_head_country_term_start ON head (country, term_start);
 CREATE INDEX idx_head_country_number ON head (country, number);
 CREATE INDEX idx_head_name ON head (name);
 ```
 
-A term is told apart by `(country, term_start)`; the generator checks that no pair repeats, though
-the schema declares no constraint on it. `number` could not serve, because it means something
+A term is told apart by `(country, term_start)`, the business key, which a unique index declares.
+`number` could not serve, because it means something
 different in each country -- Japan counts appointments, South Korea elections, the United States
 presidencies, France and the United Kingdom persons -- and the last two repeat it across a person's
 terms. `office.numbering` spells out each country's rule. `id` is the rowid, numbered by country
 and then by date as the generator inserts; the file is rebuilt on every run, so do not store an `id`
-anywhere outside the file. The schema declares no uniqueness beyond `id`; the generator checks the
-data once, at build time.
+anywhere outside the file. The schema declares no uniqueness beyond `id` and the business key; the
+generator checks the rest of the data once, at build time.
 Dates are text, SQLite's own convention, so this finds who held office on a day:
 
 ```sql

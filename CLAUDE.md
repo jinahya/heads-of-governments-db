@@ -103,12 +103,12 @@ in the schema notes saying the same thing.
   generator inserts; the generator sorts by `country` then `term_start` first, so ids are 1..N in that
   order, but the file is rebuilt on every run and an `id` is never stable. What tells terms apart is
   `(country, term_start)`, not `(country, number)`: France and the United Kingdom keep a person's
-  number across terms, so `number` repeats. The schema declares no unique constraint on
-  `(country, term_start)`, by decision; the generator asserts it after the inserts instead. Dates are
+  number across terms, so `number` repeats. `(country, term_start)` is the business key, declared
+  by the unique index `idx_head_country_term_start`; `id` stays the surrogate key. Dates are
   ISO-8601 text, SQLite's convention. `term_end IS NULL` is the incumbent.
-- Indexes: `(country, number)` and `(name)`, both plain. There is no unique index on the incumbent,
-  by decision: the schema is for consumers, and the generator asserts one incumbent per office
-  after the inserts instead.
+- Indexes: `(country, term_start)`, unique, the business key; `(country, number)` and `(name)`,
+  both plain. There is no unique index on the incumbent, by decision: the schema is for consumers,
+  and the generator asserts one incumbent per office after the inserts instead.
 
 Names are country codes and snake_case; keep them so. If a country ever contributes a second office
 (South Korea has a prime minister too), the key of `office` becomes `(country, head_kind)` and

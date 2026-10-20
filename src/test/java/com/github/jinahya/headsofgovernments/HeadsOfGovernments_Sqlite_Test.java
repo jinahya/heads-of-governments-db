@@ -192,8 +192,6 @@ class HeadsOfGovernments_Sqlite_Test {
             }
             assertThat(count(connection, "SELECT MIN(id) FROM head")).as("first id").isOne();
             assertThat(count(connection, "SELECT MAX(id) FROM head")).as("last id").isEqualTo(heads.size());
-            assertThat(count(connection, "SELECT COUNT(*) FROM (SELECT country, term_start FROM head GROUP BY 1, 2 HAVING COUNT(*) > 1)"))
-                    .as("(country, term_start) duplicates").isZero();
             assertThat(count(connection, "SELECT COUNT(*) FROM head WHERE term_end IS NULL"))
                     .as("incumbents").isEqualTo(5);
             assertThat(count(connection, "SELECT COUNT(*) FROM head WHERE country NOT IN (SELECT country FROM office)"))
@@ -201,7 +199,9 @@ class HeadsOfGovernments_Sqlite_Test {
             assertThat(count(connection, "SELECT COUNT(*) FROM pragma_foreign_key_check")).as("foreign_key_check rows").isZero();
             assertThat(count(connection, "SELECT COUNT(*) FROM sqlite_stat1")).as("ANALYZE ran").isPositive();
             assertThat(count(connection, "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name LIKE 'idx_head_%'"))
-                    .as("indexes").isEqualTo(2);
+                    .as("indexes").isEqualTo(3);
+            assertThat(count(connection, "SELECT COUNT(*) FROM pragma_index_list('head') WHERE \"unique\" AND origin = 'c'"))
+                    .as("unique indexes; the business key").isOne();
         }
         // the last word: compact the file, and leave it with no free page
         try (var connection = DriverManager.getConnection(url())) {
