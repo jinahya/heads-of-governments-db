@@ -1,0 +1,1130 @@
+= Exercises
+:toc: left
+:toclevels: 3
+
+The exercises on `db/heads_of_governments.sqlite3`: a section for each table, with a section for each level, and, at the end, a section for the schema as a whole.
+Each exercise states the request it answers; the SQL that answers it is in the `.sql` file, under the same id.
+The ids are registered in `EXERCISES.yaml`.
+
+Parameters are bind variables (`:name`); the `sqlite3` shell binds one with `.parameter set :name 'value'`, and an IDE prompts for them when a statement runs.
+An exercise with a parameter, or one that measures to `date('now')`, shows no output, since what it gives back depends on the value or the day.
+
+Run a file as a whole:
+
+[source,sh]
+----
+sqlite3 -readonly db/heads_of_governments.sqlite3 < src/test/sql/<file>.sql
+----
+
+== head
+
+The `head` table: a row per term of a head of government.
+
+=== Basic
+
+[[HOG-HEAD-B-01]]
+==== HOG-HEAD-B-01: Who held office on a day
+
+A reader gives a date and wants each country's head on that day.
+A country whose office was vacant is absent.
+
+.`head_exercises_01_basic.sql`, HOG-HEAD-B-01
+[%collapsible]
+====
+[source,sql]
+----
+SELECT country, number, name, party, term_start, term_end
+FROM head
+WHERE term_start <= :date
+  AND (term_end IS NULL OR term_end >= :date)
+ORDER BY country ASC
+----
+
+====
+
+[[HOG-HEAD-B-02]]
+==== HOG-HEAD-B-02: One country's list
+
+A reader wants a country's heads, first to latest, as the source lists them.
+
+.`head_exercises_01_basic.sql`, HOG-HEAD-B-02
+[%collapsible]
+====
+[source,sql]
+----
+SELECT *
+FROM head
+WHERE country = :country
+ORDER BY term_start ASC
+----
+
+====
+
+[[HOG-HEAD-B-03]]
+==== HOG-HEAD-B-03: The incumbents
+
+The dashboard shows who is in office now, per country, and since when.
+
+.`head_exercises_01_basic.sql`, HOG-HEAD-B-03
+[%collapsible]
+====
+[source,sql]
+----
+SELECT country, number, name, party, term_start
+FROM head
+WHERE term_end IS NULL
+ORDER BY country ASC
+----
+
+....
++---------+--------+-----------------+------------------+------------+
+| country | number |      name       |      party       | term_start |
++---------+--------+-----------------+------------------+------------+
+| FR      |     25 | Emmanuel Macron | LREM/Renaissance | 2022-05-14 |
+| GB      |     59 | Andy Burnham    | Labour           | 2026-07-20 |
+| JP      |    105 | 高市早苗        | 自由民主党       | 2026-02-18 |
+| KR      |     21 | 이재명          | 더불어민주당     | 2025-06-04 |
+| US      |     47 | Donald Trump    | Republican       | 2025-01-20 |
++---------+--------+-----------------+------------------+------------+
+....
+
+====
+
+[[HOG-HEAD-B-04]]
+==== HOG-HEAD-B-04: Terms by name
+
+A reader types part of a name and wants every term of anyone matching it.
+LIKE folds case for ASCII letters only, so 'churchill' finds Churchill and '吉田' finds 吉田茂; the index on name does not help a leading wildcard.
+
+.`head_exercises_01_basic.sql`, HOG-HEAD-B-04
+[%collapsible]
+====
+[source,sql]
+----
+SELECT country, number, name, term_start, term_end
+FROM head
+WHERE name LIKE '%' || :name || '%'
+ORDER BY country ASC, term_start ASC
+----
+
+====
+
+[[HOG-HEAD-B-05]]
+==== HOG-HEAD-B-05: Terms that began in a year
+
+A timeline wants every term that began in a given year, in any country, in date order.
+
+.`head_exercises_01_basic.sql`, HOG-HEAD-B-05
+[%collapsible]
+====
+[source,sql]
+----
+SELECT term_start, country, number, name
+FROM head
+WHERE term_start BETWEEN :year || '-01-01' AND :year || '-12-31'
+ORDER BY term_start ASC, country ASC
+----
+
+====
+
+=== Intermediate
+
+[[HOG-HEAD-I-01]]
+==== HOG-HEAD-I-01: The longest terms of a country
+
+For one country, each term with its length in days, longest first; the incumbent's term runs to today.
+
+.`head_exercises_02_intermediate.sql`, HOG-HEAD-I-01
+[%collapsible]
+====
+[source,sql]
+----
+SELECT number,
+       name,
+       term_start,
+       term_end,
+       CAST(julianday(COALESCE(term_end, date ('now'))) - julianday(term_start) AS INTEGER) AS days
+FROM head
+WHERE country = :country
+ORDER BY days DESC, term_start ASC
+----
+
+====
+
+[[HOG-HEAD-I-02]]
+==== HOG-HEAD-I-02: More than one term
+
+Per country, the persons with more than one term, with how many and the numbers they held.
+
+.`head_exercises_02_intermediate.sql`, HOG-HEAD-I-02
+[%collapsible]
+====
+[source,sql]
+----
+SELECT country, name, COUNT(*) AS terms, GROUP_CONCAT(number, ', ' ORDER BY term_start) AS numbers
+FROM head
+GROUP BY country, name
+HAVING COUNT(*) > 1
+ORDER BY country ASC, MIN(term_start) ASC
+----
+
+....
++---------+----------------------------+-------+--------------------+
+| country |            name            | terms |      numbers       |
++---------+----------------------------+-------+--------------------+
+| FR      | Jules Grévy                |     2 | 4, 4               |
+| FR      | Albert Lebrun              |     2 | 15, 15             |
+| FR      | Charles de Gaulle          |     2 | 18, 18             |
+| FR      | François Mitterrand        |     2 | 21, 21             |
+| FR      | Jacques Chirac             |     2 | 22, 22             |
+| FR      | Emmanuel Macron            |     2 | 25, 25             |
+| GB      | Thomas Pelham-Holles       |     2 | 4, 4               |
+| GB      | Charles Watson-Wentworth   |     2 | 8, 8               |
+| GB      | William Cavendish-Bentinck |     2 | 13, 13             |
+| GB      | William Pitt the Younger   |     2 | 14, 14             |
++---------+----------------------------+-------+--------------------+
+....
+
+53 rows; the first 10.
+
+====
+
+[[HOG-HEAD-I-03]]
+==== HOG-HEAD-I-03: Age on taking office
+
+Per country, the youngest, the oldest and the average age at which a term began, in whole years of the calendar (the year of term_start less the year of birth; born is a year, so that is as fine as the data allows).
+
+.`head_exercises_02_intermediate.sql`, HOG-HEAD-I-03
+[%collapsible]
+====
+[source,sql]
+----
+SELECT country,
+       MIN(CAST(SUBSTR(term_start, 1, 4) AS INTEGER) - born)           AS youngest,
+       MAX(CAST(SUBSTR(term_start, 1, 4) AS INTEGER) - born)           AS oldest,
+       ROUND(AVG(CAST(SUBSTR(term_start, 1, 4) AS INTEGER) - born), 1) AS average
+FROM head
+GROUP BY country
+ORDER BY country ASC
+----
+
+....
++---------+----------+--------+---------+
+| country | youngest | oldest | average |
++---------+----------+--------+---------+
+| FR      |       40 |     79 |    61.3 |
+| GB      |       24 |     83 |    56.3 |
+| JP      |       44 |     77 |    63.1 |
+| KR      |       46 |     81 |    61.2 |
+| US      |       43 |     79 |    56.7 |
++---------+----------+--------+---------+
+....
+
+====
+
+[[HOG-HEAD-I-04]]
+==== HOG-HEAD-I-04: Terms per party
+
+For one country, each party with how many terms it held and how many different persons, most terms first.
+A party written as a succession ('RPR/UMP') counts as its own value.
+
+.`head_exercises_02_intermediate.sql`, HOG-HEAD-I-04
+[%collapsible]
+====
+[source,sql]
+----
+SELECT party, COUNT(*) AS terms, COUNT(DISTINCT name) AS persons
+FROM head
+WHERE country = :country
+GROUP BY party
+ORDER BY terms DESC, party ASC
+----
+
+====
+
+[[HOG-HEAD-I-05]]
+==== HOG-HEAD-I-05: Living former heads
+
+Per country, the former heads still living, with the day their last term ended, most recent first.
+
+.`head_exercises_02_intermediate.sql`, HOG-HEAD-I-05
+[%collapsible]
+====
+[source,sql]
+----
+SELECT country, name, born, MAX(term_end) AS last_term_end
+FROM head
+WHERE died IS NULL
+GROUP BY country, name
+HAVING MAX(term_end IS NULL) = 0
+ORDER BY country ASC, last_term_end DESC NULLS LAST
+----
+
+....
++---------+-------------------+------+---------------+
+| country |       name        | born | last_term_end |
++---------+-------------------+------+---------------+
+| FR      | François Hollande | 1954 | 2017-05-14    |
+| FR      | Nicolas Sarkozy   | 1955 | 2012-05-15    |
+| GB      | Keir Starmer      | 1962 | 2026-07-20    |
+| GB      | Rishi Sunak       | 1980 | 2024-07-05    |
+| GB      | Liz Truss         | 1975 | 2022-10-25    |
+| GB      | Boris Johnson     | 1964 | 2022-09-06    |
+| GB      | Theresa May       | 1956 | 2019-07-24    |
+| GB      | David Cameron     | 1966 | 2016-07-13    |
+| GB      | Gordon Brown      | 1951 | 2010-05-11    |
+| GB      | Tony Blair        | 1953 | 2007-06-27    |
++---------+-------------------+------+---------------+
+....
+
+30 rows; the first 10.
+
+====
+
+[[HOG-HEAD-I-06]]
+==== HOG-HEAD-I-06: Terms begun per decade
+
+Across all countries, how many terms began in each decade, with the countries that had one.
+
+.`head_exercises_02_intermediate.sql`, HOG-HEAD-I-06
+[%collapsible]
+====
+[source,sql]
+----
+SELECT SUBSTR(term_start, 1, 3) || '0s' AS decade,
+       COUNT(*)                         AS terms,
+       GROUP_CONCAT(DISTINCT country)   AS countries
+FROM head
+GROUP BY decade
+ORDER BY decade ASC
+----
+
+....
++--------+-------+----------------+
+| decade | terms |   countries    |
++--------+-------+----------------+
+| 1720s  |     1 | GB             |
+| 1740s  |     2 | GB             |
+| 1750s  |     3 | GB             |
+| 1760s  |     5 | GB             |
+| 1770s  |     1 | GB             |
+| 1780s  |     5 | GB,US          |
+| 1790s  |     1 | US             |
+| 1800s  |     7 | GB,US          |
+| 1810s  |     2 | GB,US          |
+| 1820s  |     5 | GB,US          |
++--------+-------+----------------+
+....
+
+30 rows; the first 10.
+
+====
+
+[[HOG-HEAD-I-07]]
+==== HOG-HEAD-I-07: The latest terms of each country
+
+Per country, the :n most recent terms, oldest of them first.
+Terms, not persons: a head re-elected appears once per term. term_start is NOT NULL and distinct within a country, so the numbering has no ties.
+
+.`head_exercises_02_intermediate.sql`, HOG-HEAD-I-07
+[%collapsible]
+====
+[source,sql]
+----
+SELECT country, number, name, term_start, term_end
+FROM (SELECT h.*, ROW_NUMBER() OVER (PARTITION BY country ORDER BY term_start DESC) AS latest_rn
+      FROM head AS h)
+WHERE latest_rn <= :n
+ORDER BY country ASC, term_start ASC
+----
+
+====
+
+[[HOG-HEAD-I-08]]
+==== HOG-HEAD-I-08: The first and the latest terms of each country
+
+Per country, its first :n terms and its most recent :n, each row saying which it is.
+A row is 'first' when it is among the first :n, so with a country of 2 * :n terms or fewer the two sets overlap and 'first' wins.
+
+.`head_exercises_02_intermediate.sql`, HOG-HEAD-I-08
+[%collapsible]
+====
+[source,sql]
+----
+SELECT country,
+       CASE WHEN first_rn <= :n THEN 'first' ELSE 'latest' END AS which,
+       number,
+       name,
+       term_start,
+       term_end
+FROM (SELECT h.*,
+             ROW_NUMBER() OVER (PARTITION BY country ORDER BY term_start ASC)  AS first_rn, ROW_NUMBER() OVER (PARTITION BY country ORDER BY term_start DESC) AS latest_rn
+      FROM head AS h)
+WHERE first_rn <= :n
+   OR latest_rn <= :n
+ORDER BY country ASC, term_start ASC
+----
+
+====
+
+[[HOG-HEAD-I-09]]
+==== HOG-HEAD-I-09: The first two terms of each country
+
+Per country, its first two terms, the earlier first.
+Terms, not persons: a head whose first two terms were consecutive appears twice. term_start is NOT NULL and distinct within a country, so the numbering has no ties.
+
+.`head_exercises_02_intermediate.sql`, HOG-HEAD-I-09
+[%collapsible]
+====
+[source,sql]
+----
+SELECT country, name, term_start, term_end
+FROM (SELECT h.*, ROW_NUMBER() OVER (PARTITION BY country ORDER BY term_start ASC) AS first_rn
+      FROM head AS h)
+WHERE first_rn <= 2
+ORDER BY country ASC, term_start ASC
+----
+
+....
++---------+--------------------------+------------+------------+
+| country |           name           | term_start |  term_end  |
++---------+--------------------------+------------+------------+
+| FR      | Louis-Napoléon Bonaparte | 1848-12-20 | 1852-12-02 |
+| FR      | Adolphe Thiers           | 1871-08-31 | 1873-05-24 |
+| GB      | Robert Walpole           | 1721-04-03 | 1742-02-11 |
+| GB      | Spencer Compton          | 1742-02-16 | 1743-07-02 |
+| JP      | 伊藤博文                 | 1885-12-22 | 1888-04-30 |
+| JP      | 黒田清隆                 | 1888-04-30 | 1889-10-25 |
+| KR      | 이승만                   | 1948-07-24 | 1952-08-14 |
+| KR      | 이승만                   | 1952-08-15 | 1956-08-14 |
+| US      | George Washington        | 1789-04-30 | 1797-03-04 |
+| US      | John Adams               | 1797-03-04 | 1801-03-04 |
++---------+--------------------------+------------+------------+
+....
+
+====
+
+[[HOG-HEAD-I-10]]
+==== HOG-HEAD-I-10: Two or more terms, the top three per country
+
+Per country, up to three heads with two or more terms, most terms first and, at a tie, the earlier first term first; a name is taken as one person.
+
+.`head_exercises_02_intermediate.sql`, HOG-HEAD-I-10
+[%collapsible]
+====
+[source,sql]
+----
+SELECT country, name, terms
+FROM (SELECT country,
+             name,
+             COUNT(*) AS  terms,
+             ROW_NUMBER() OVER (PARTITION BY country ORDER BY COUNT(*) DESC, MIN(term_start) ASC) AS place
+      FROM head
+      GROUP BY country, name
+      HAVING COUNT(*) >= 2)
+WHERE place <= 3
+ORDER BY country ASC, place ASC
+----
+
+....
++---------+-------------------------+-------+
+| country |          name           | terms |
++---------+-------------------------+-------+
+| FR      | Jules Grévy             |     2 |
+| FR      | Albert Lebrun           |     2 |
+| FR      | Charles de Gaulle       |     2 |
+| GB      | William Ewart Gladstone |     4 |
+| GB      | Edward Smith-Stanley    |     3 |
+| GB      | Robert Gascoyne-Cecil   |     3 |
+| JP      | 吉田茂                  |     5 |
+| JP      | 伊藤博文                |     4 |
+| JP      | 安倍晋三                |     4 |
+| KR      | 박정희                  |     5 |
+| KR      | 이승만                  |     3 |
+| KR      | 전두환                  |     2 |
+| US      | Grover Cleveland        |     2 |
+| US      | Donald Trump            |     2 |
++---------+-------------------------+-------+
+....
+
+====
+
+[[HOG-HEAD-I-11]]
+==== HOG-HEAD-I-11: Party share of completed terms, the top three per country
+
+Per country, over the terms that have ended, each party's share of the days in office as a percentage of that country's total (its tenure share), the top three parties; a succession ('A/B') counts as a party of its own.
+
+.`head_exercises_02_intermediate.sql`, HOG-HEAD-I-11
+[%collapsible]
+====
+[source,sql]
+----
+SELECT country, party, tenure_share
+FROM (SELECT country,
+             party,
+             ROUND(100.0 * SUM(julianday(term_end) - julianday(term_start))
+                       / SUM(SUM(julianday(term_end) - julianday(term_start))) OVER (PARTITION BY country),
+                   1) AS  tenure_share,
+             ROW_NUMBER() OVER (PARTITION BY country
+                 ORDER BY SUM(julianday(term_end) - julianday(term_start)) DESC)             AS place
+      FROM head
+      WHERE term_end IS NOT NULL
+      GROUP BY country, party)
+WHERE place <= 3
+ORDER BY country ASC, tenure_share DESC
+----
+
+....
++---------+------------------------------------+--------------+
+| country |               party                | tenure_share |
++---------+------------------------------------+--------------+
+| FR      | Alliance_républicaine_démocratique |         14.6 |
+| FR      | PS                                 |         12.8 |
+| FR      | Républicain_opportuniste           |         10.8 |
+| GB      | Conservative                       |         32.1 |
+| GB      | Whig                               |         22.8 |
+| GB      | Tory                               |         19.3 |
+| JP      | 自由民主党                         |         46.1 |
+| JP      | 無所属                             |         24.6 |
+| JP      | 立憲政友会                         |          8.5 |
+| KR      | 민주공화당                         |         21.3 |
+| KR      | 자유당                             |         10.4 |
+| KR      | 민주정의당                         |          9.4 |
+| US      | Democratic                         |         39.0 |
+| US      | Republican                         |         37.3 |
+| US      | Democratic-Republican              |         10.2 |
++---------+------------------------------------+--------------+
+....
+
+====
+
+=== Advanced
+
+[[HOG-HEAD-A-01]]
+==== HOG-HEAD-A-01: Vacancies
+
+Per country, each gap of more than a day between a term's end and the next term's start, with its length; a day between is only how some sources write a succession, so it does not count.
+
+.`head_exercises_03_advanced.sql`, HOG-HEAD-A-01
+[%collapsible]
+====
+[source,sql]
+----
+SELECT country,
+       previous_name,
+       previous_term_end,
+       name,
+       term_start,
+       CAST(julianday(term_start) - julianday(previous_term_end) AS INTEGER) - 1 AS days_vacant
+FROM (SELECT country,
+             name,
+             term_start,
+             LAG(name) OVER (PARTITION BY country ORDER BY term_start)     AS previous_name, LAG(term_end) OVER (PARTITION BY country ORDER BY term_start) AS previous_term_end
+      FROM head)
+WHERE julianday(term_start) - julianday(previous_term_end) > 1
+ORDER BY country ASC, term_start ASC
+----
+
+....
++---------+--------------------------+-------------------+----------------------------+------------+-------------+
+| country |      previous_name       | previous_term_end |            name            | term_start | days_vacant |
++---------+--------------------------+-------------------+----------------------------+------------+-------------+
+| FR      | Louis-Napoléon Bonaparte | 1852-12-02        | Adolphe Thiers             | 1871-08-31 |        6845 |
+| FR      | Sadi Carnot              | 1894-06-25        | Jean Casimir-Perier        | 1894-06-27 |           1 |
+| FR      | Félix Faure              | 1899-02-16        | Émile Loubet               | 1899-02-18 |           1 |
+| FR      | Paul Deschanel           | 1920-09-21        | Alexandre Millerand        | 1920-09-23 |           1 |
+| FR      | Alexandre Millerand      | 1924-06-11        | Gaston Doumergue           | 1924-06-13 |           1 |
+| FR      | Paul Doumer              | 1932-05-07        | Albert Lebrun              | 1932-05-10 |           2 |
+| FR      | Albert Lebrun            | 1940-07-11        | Vincent Auriol             | 1947-01-16 |        2379 |
+| FR      | Charles de Gaulle        | 1969-04-28        | Georges Pompidou           | 1969-06-20 |          52 |
+| FR      | Georges Pompidou         | 1974-04-02        | Valéry Giscard d'Estaing   | 1974-05-27 |          54 |
+| GB      | Robert Walpole           | 1742-02-11        | Spencer Compton            | 1742-02-16 |           4 |
++---------+--------------------------+-------------------+----------------------------+------------+-------------+
+....
+
+61 rows; the first 10.
+
+====
+
+[[HOG-HEAD-A-02]]
+==== HOG-HEAD-A-02: Longest in office
+
+Per country, the person with the most days in office over all their terms, counting an open term to today; ties share the place.
+
+.`head_exercises_03_advanced.sql`, HOG-HEAD-A-02
+[%collapsible]
+====
+[source,sql]
+----
+SELECT country, name, terms, days
+FROM (SELECT country,
+             name,
+             COUNT(*)                                                                                  AS terms,
+             CAST(SUM(julianday(COALESCE(term_end, date ('now'))) - julianday(term_start)) AS INTEGER) AS days,
+             RANK()                                                                                       OVER (PARTITION BY country
+                 ORDER BY SUM(julianday(COALESCE(term_end, date('now'))) - julianday(term_start)) DESC) AS place
+      FROM head
+      GROUP BY country, name)
+WHERE place = 1
+ORDER BY country ASC
+----
+
+====
+
+[[HOG-HEAD-A-03]]
+==== HOG-HEAD-A-03: The longest run of one party
+
+Per country, the longest unbroken run of consecutive terms held by the same party, with when it began and ended; a run is counted in terms, not days, and a succession ('UNR/UDR') is a party of its own.
+
+.`head_exercises_03_advanced.sql`, HOG-HEAD-A-03
+[%collapsible]
+====
+[source,sql]
+----
+WITH ordered AS (SELECT country,
+                        party,
+                        term_start,
+                        term_end,
+                        ROW_NUMBER() OVER (PARTITION BY country ORDER BY term_start)        AS seq, ROW_NUMBER() OVER (PARTITION BY country, party ORDER BY term_start) AS seq_in_party
+                 FROM head),
+     runs AS (SELECT country,
+                     party,
+                     COUNT(*)                              AS terms,
+                     MIN(term_start)                       AS since,
+                     MAX(COALESCE(term_end, date ('now'))) AS until
+              FROM ordered
+              GROUP BY country, party, seq - seq_in_party),
+     placed AS (SELECT *, RANK() OVER (PARTITION BY country ORDER BY terms DESC, since ASC) AS place
+                FROM runs)
+SELECT country, party, terms, since, until
+FROM placed
+WHERE place = 1
+ORDER BY country ASC
+----
+
+....
++---------+--------------------------+-------+------------+------------+
+| country |          party           | terms |   since    |   until    |
++---------+--------------------------+-------+------------+------------+
+| FR      | Républicain_opportuniste |     4 | 1879-01-30 | 1895-01-16 |
+| GB      | Whig                     |     6 | 1721-04-03 | 1762-05-26 |
+| JP      | 自由民主党               |    25 | 1955-11-22 | 1993-08-09 |
+| KR      | 민주공화당               |     5 | 1963-12-17 | 1979-10-26 |
+| US      | Republican               |     4 | 1869-03-04 | 1885-03-04 |
++---------+--------------------------+-------+------------+------------+
+....
+
+====
+
+[[HOG-HEAD-A-04]]
+==== HOG-HEAD-A-04: Every party of a head, one per row
+
+party may be a succession, 'A/B', when the party was renamed or changed under the head.
+Give the heads whose party is one, with each party on its own row and its position in the succession.
+
+.`head_exercises_03_advanced.sql`, HOG-HEAD-A-04
+[%collapsible]
+====
+[source,sql]
+----
+WITH RECURSIVE parts(id, country, name, term_start, position, party, rest) AS
+                   (SELECT id, country, name, term_start, 0, NULL, party || '/'
+                    FROM head
+                    WHERE party LIKE '%/%'
+                    UNION ALL
+                    SELECT id,
+                           country,
+                           name,
+                           term_start,
+                           position + 1,
+                           SUBSTR(rest, 1, INSTR(rest, '/') - 1),
+                           SUBSTR(rest, INSTR(rest, '/') + 1)
+                    FROM parts
+                    WHERE rest <> '')
+SELECT country, name, term_start, position, party
+FROM parts
+WHERE position > 0
+ORDER BY country ASC, term_start ASC, position ASC
+----
+
+....
++---------+--------------------------+------------+----------+--------------------------+
+| country |           name           | term_start | position |          party           |
++---------+--------------------------+------------+----------+--------------------------+
+| FR      | Adolphe Thiers           | 1871-08-31 |        1 | Orléaniste               |
+| FR      | Adolphe Thiers           | 1871-08-31 |        2 | Républicain_opportuniste |
+| FR      | Félix Faure              | 1895-01-17 |        1 | Républicain_opportuniste |
+| FR      | Félix Faure              | 1895-01-17 |        2 | Républicain_progressiste |
+| FR      | Charles de Gaulle        | 1966-01-08 |        1 | UNR                      |
+| FR      | Charles de Gaulle        | 1966-01-08 |        2 | UDR                      |
+| FR      | Valéry Giscard d'Estaing | 1974-05-27 |        1 | RI                       |
+| FR      | Valéry Giscard d'Estaing | 1974-05-27 |        2 | UDF                      |
+| FR      | Jacques Chirac           | 2002-05-17 |        1 | RPR                      |
+| FR      | Jacques Chirac           | 2002-05-17 |        2 | UMP                      |
++---------+--------------------------+------------+----------+--------------------------+
+....
+
+43 rows; the first 10.
+
+====
+
+[[HOG-HEAD-A-05]]
+==== HOG-HEAD-A-05: Predecessor and successor
+
+For a person named exactly, each of their terms with who held the office immediately before and after it in that country; the incumbent has no successor.
+
+.`head_exercises_03_advanced.sql`, HOG-HEAD-A-05
+[%collapsible]
+====
+[source,sql]
+----
+SELECT country, number, term_start, term_end, predecessor, successor
+FROM (SELECT country,
+             number,
+             name,
+             term_start,
+             term_end,
+             LAG(name) OVER (PARTITION BY country ORDER BY term_start)  AS predecessor, LEAD(name) OVER (PARTITION BY country ORDER BY term_start) AS successor
+      FROM head)
+WHERE name = :name
+ORDER BY country ASC, term_start ASC
+----
+
+====
+
+== office
+
+The `office` table: a row per country's office.
+
+=== Basic
+
+[[HOG-OFFICE-B-01]]
+==== HOG-OFFICE-B-01: An office by country
+
+A reader has a country code, typed in whatever case, and wants that office.
+
+.`office_exercises_01_basic.sql`, HOG-OFFICE-B-01
+[%collapsible]
+====
+[source,sql]
+----
+SELECT country, head_kind, head_title, numbering
+FROM office
+WHERE country = UPPER(:country)
+----
+
+====
+
+[[HOG-OFFICE-B-02]]
+==== HOG-OFFICE-B-02: The offices
+
+The front page lists every office with the title of its head, by country code.
+
+.`office_exercises_01_basic.sql`, HOG-OFFICE-B-02
+[%collapsible]
+====
+[source,sql]
+----
+SELECT country, head_kind, head_title
+FROM office
+ORDER BY country ASC
+----
+
+....
++---------+----------------+----------------------------+
+| country |   head_kind    |         head_title         |
++---------+----------------+----------------------------+
+| FR      | PRESIDENT      | Président de la République |
+| GB      | PRIME_MINISTER | Prime Minister             |
+| JP      | PRIME_MINISTER | 内閣総理大臣               |
+| KR      | PRESIDENT      | 대통령                     |
+| US      | PRESIDENT      | President                  |
++---------+----------------+----------------------------+
+....
+
+====
+
+=== Intermediate
+
+[[HOG-OFFICE-I-01]]
+==== HOG-OFFICE-I-01: Offices by the kind of head
+
+How many offices have a president and how many a prime minister, naming the countries of each.
+
+.`office_exercises_02_intermediate.sql`, HOG-OFFICE-I-01
+[%collapsible]
+====
+[source,sql]
+----
+SELECT head_kind, COUNT(*) AS offices, GROUP_CONCAT(country, ', ' ORDER BY country) AS countries
+FROM office
+GROUP BY head_kind
+ORDER BY head_kind ASC
+----
+
+....
++----------------+---------+------------+
+|   head_kind    | offices | countries  |
++----------------+---------+------------+
+| PRESIDENT      |       3 | FR, KR, US |
+| PRIME_MINISTER |       2 | GB, JP     |
++----------------+---------+------------+
+....
+
+====
+
+[[HOG-OFFICE-I-02]]
+==== HOG-OFFICE-I-02: Titles outside ASCII
+
+head_title is in the country's own language.
+Which titles use a character outside ASCII, and which do not?
+
+.`office_exercises_02_intermediate.sql`, HOG-OFFICE-I-02
+[%collapsible]
+====
+[source,sql]
+----
+SELECT country,
+       head_title,
+       CASE WHEN head_title GLOB '*[^ -~]*' THEN 'non-ASCII' ELSE 'ASCII' END AS script
+FROM office
+ORDER BY script ASC, country ASC
+----
+
+....
++---------+----------------------------+-----------+
+| country |         head_title         |  script   |
++---------+----------------------------+-----------+
+| GB      | Prime Minister             | ASCII     |
+| US      | President                  | ASCII     |
+| FR      | Président de la République | non-ASCII |
+| JP      | 内閣総理大臣               | non-ASCII |
+| KR      | 대통령                     | non-ASCII |
++---------+----------------------------+-----------+
+....
+
+====
+
+=== Advanced
+
+[[HOG-OFFICE-A-01]]
+==== HOG-OFFICE-A-01: What number counts, in a phrase
+
+numbering is a sentence, but each opens by naming what is counted -- 'ordinal of the person by first election', '代', '대', 'presidency number' -- before its first comma or semicolon.
+Show each office with that phrase alone.
+
+.`office_exercises_03_advanced.sql`, HOG-OFFICE-A-01
+[%collapsible]
+====
+[source,sql]
+----
+SELECT country,
+       CASE
+           WHEN comma > 0 AND (semicolon = 0 OR comma < semicolon) THEN SUBSTR(numbering, 1, comma - 1)
+           WHEN semicolon > 0 THEN SUBSTR(numbering, 1, semicolon - 1)
+           ELSE numbering
+           END AS counts
+FROM (SELECT country, numbering, INSTR(numbering, ',') AS comma, INSTR(numbering, ';') AS semicolon
+      FROM office)
+ORDER BY country ASC
+----
+
+....
++---------+--------------------------------------------+
+| country |                   counts                   |
++---------+--------------------------------------------+
+| FR      | ordinal of the person by first election    |
+| GB      | ordinal of the person by first appointment |
+| JP      | 代                                         |
+| KR      | 대                                         |
+| US      | presidency number                          |
++---------+--------------------------------------------+
+....
+
+====
+
+== The schema
+
+Exercises that read both tables.
+
+=== Basic
+
+[[HOG-SCHEMA-B-01]]
+==== HOG-SCHEMA-B-01: The incumbents, with their titles
+
+The front page names each country's head of government today, with the title the country gives the office.
+
+.`_schema_exercises_01_basic.sql`, HOG-SCHEMA-B-01
+[%collapsible]
+====
+[source,sql]
+----
+SELECT g.country, g.head_title, h.name, h.term_start
+FROM office g
+         JOIN head h ON h.country = g.country AND h.term_end IS NULL
+ORDER BY g.country ASC
+----
+
+....
++---------+----------------------------+-----------------+------------+
+| country |         head_title         |      name       | term_start |
++---------+----------------------------+-----------------+------------+
+| FR      | Président de la République | Emmanuel Macron | 2022-05-14 |
+| GB      | Prime Minister             | Andy Burnham    | 2026-07-20 |
+| JP      | 内閣総理大臣               | 高市早苗        | 2026-02-18 |
+| KR      | 대통령                     | 이재명          | 2025-06-04 |
+| US      | President                  | Donald Trump    | 2025-01-20 |
++---------+----------------------------+-----------------+------------+
+....
+
+====
+
+[[HOG-SCHEMA-B-02]]
+==== HOG-SCHEMA-B-02: A country's list, with the rule for its numbers
+
+A reader asks for one country's list and should see, with it, what number counts there.
+
+.`_schema_exercises_01_basic.sql`, HOG-SCHEMA-B-02
+[%collapsible]
+====
+[source,sql]
+----
+SELECT g.head_title, g.numbering, h.number, h.term_start, h.term_end, h.name, h.party
+FROM office g
+         JOIN head h ON h.country = g.country
+WHERE g.country = :country
+ORDER BY h.term_start ASC
+----
+
+====
+
+[[HOG-SCHEMA-B-03]]
+==== HOG-SCHEMA-B-03: Terms per office
+
+Each office with the kind of head it has and how many terms the list holds.
+
+.`_schema_exercises_01_basic.sql`, HOG-SCHEMA-B-03
+[%collapsible]
+====
+[source,sql]
+----
+SELECT g.country, g.head_kind, COUNT(h.id) AS terms
+FROM office g
+         LEFT JOIN head h ON h.country = g.country
+GROUP BY g.country, g.head_kind
+ORDER BY g.country ASC
+----
+
+....
++---------+----------------+-------+
+| country |   head_kind    | terms |
++---------+----------------+-------+
+| FR      | PRESIDENT      |    31 |
+| GB      | PRIME_MINISTER |    81 |
+| JP      | PRIME_MINISTER |   105 |
+| KR      | PRESIDENT      |    21 |
+| US      | PRESIDENT      |    47 |
++---------+----------------+-------+
+....
+
+====
+
+=== Intermediate
+
+[[HOG-SCHEMA-I-01]]
+==== HOG-SCHEMA-I-01: Presidents against prime ministers
+
+By the kind of head: how many terms, how many different persons, and the average length of a term in days, an open term counted to today.
+
+.`_schema_exercises_02_intermediate.sql`, HOG-SCHEMA-I-01
+[%collapsible]
+====
+[source,sql]
+----
+SELECT g.head_kind,
+       COUNT(*)                                                                                       AS terms,
+       COUNT(DISTINCT g.country || ' ' || h.name)                                                     AS persons,
+       CAST(AVG(julianday(COALESCE(h.term_end, date('now'))) - julianday(h.term_start)) AS INTEGER)   AS average_days
+FROM office g
+         JOIN head h ON h.country = g.country
+GROUP BY g.head_kind
+ORDER BY g.head_kind ASC
+----
+
+====
+
+[[HOG-SCHEMA-I-02]]
+==== HOG-SCHEMA-I-02: Numbering in practice
+
+Per office: how many terms, how many distinct numbers, the highest number, and the rule; where terms exceed numbers, number is the person's and repeats.
+
+.`_schema_exercises_02_intermediate.sql`, HOG-SCHEMA-I-02
+[%collapsible]
+====
+[source,sql]
+----
+SELECT g.country,
+       COUNT(*)                 AS terms,
+       COUNT(DISTINCT h.number) AS numbers,
+       MAX(h.number)            AS highest,
+       g.numbering
+FROM office g
+         JOIN head h ON h.country = g.country
+GROUP BY g.country, g.numbering
+ORDER BY g.country ASC
+----
+
+....
++---------+-------+---------+---------+----------------------------------------------------------------------------------------------------------------------------------------------------+
+| country | terms | numbers | highest |                                                                     numbering                                                                      |
++---------+-------+---------+---------+----------------------------------------------------------------------------------------------------------------------------------------------------+
+| FR      |    31 |      25 |      25 | ordinal of the person by first election; a person re-elected has one line per term and keeps the same number on each                               |
+| GB      |    81 |      59 |      59 | ordinal of the person by first appointment; a person who served non-consecutive terms has one line per term and keeps the same number on each      |
+| JP      |   105 |     105 |     105 | 代, one per appointment; a cabinet re-formed after a general election starts a new 代, so a person keeps one line per 代 with a new number on each |
+| KR      |    21 |      21 |      21 | 대, one per election; a person re-elected keeps one line per term with consecutive numbers                                                         |
+| US      |    47 |      47 |      47 | presidency number, one per non-consecutive presidency; a person returning after an absence gets a new number                                       |
++---------+-------+---------+---------+----------------------------------------------------------------------------------------------------------------------------------------------------+
+....
+
+====
+
+[[HOG-SCHEMA-I-03]]
+==== HOG-SCHEMA-I-03: The span of each list
+
+Per office, the first term's start, the latest term's start and the years between them, with the head's title.
+
+.`_schema_exercises_02_intermediate.sql`, HOG-SCHEMA-I-03
+[%collapsible]
+====
+[source,sql]
+----
+SELECT g.country,
+       g.head_title,
+       MIN(h.term_start)                                         AS first_term_start,
+       MAX(h.term_start)                                         AS latest_term_start,
+       CAST(SUBSTR(MAX(h.term_start), 1, 4) AS INTEGER)
+           - CAST(SUBSTR(MIN(h.term_start), 1, 4) AS INTEGER)    AS years
+FROM office g
+         JOIN head h ON h.country = g.country
+GROUP BY g.country, g.head_title
+ORDER BY g.country ASC
+----
+
+....
++---------+----------------------------+------------------+-------------------+-------+
+| country |         head_title         | first_term_start | latest_term_start | years |
++---------+----------------------------+------------------+-------------------+-------+
+| FR      | Président de la République | 1848-12-20       | 2022-05-14        |   174 |
+| GB      | Prime Minister             | 1721-04-03       | 2026-07-20        |   305 |
+| JP      | 内閣総理大臣               | 1885-12-22       | 2026-02-18        |   141 |
+| KR      | 대통령                     | 1948-07-24       | 2025-06-04        |    77 |
+| US      | President                  | 1789-04-30       | 2025-01-20        |   236 |
++---------+----------------------------+------------------+-------------------+-------+
+....
+
+====
+
+=== Advanced
+
+[[HOG-SCHEMA-A-01]]
+==== HOG-SCHEMA-A-01: Each office's longest-serving head
+
+Per office, the person with the most days in office over all their terms, with the title they held; ties share the place.
+
+.`_schema_exercises_03_advanced.sql`, HOG-SCHEMA-A-01
+[%collapsible]
+====
+[source,sql]
+----
+SELECT country, head_title, name, terms, days
+FROM (SELECT g.country,
+             g.head_title,
+             h.name,
+             COUNT(*)                                                                                   AS terms,
+             CAST(SUM(julianday(COALESCE(h.term_end, date('now'))) - julianday(h.term_start)) AS INTEGER) AS days,
+             RANK() OVER (PARTITION BY g.country
+                 ORDER BY SUM(julianday(COALESCE(h.term_end, date('now'))) - julianday(h.term_start)) DESC) AS place
+      FROM office g
+               JOIN head h ON h.country = g.country
+      GROUP BY g.country, g.head_title, h.name)
+WHERE place = 1
+ORDER BY country ASC
+----
+
+====
+
+[[HOG-SCHEMA-A-02]]
+==== HOG-SCHEMA-A-02: Every office on a day, vacant or not
+
+A reader gives a date and wants every office with its head on that day, or 'vacant' where the office was empty or the list had not yet begun.
+
+.`_schema_exercises_03_advanced.sql`, HOG-SCHEMA-A-02
+[%collapsible]
+====
+[source,sql]
+----
+SELECT g.country, g.head_title, COALESCE(h.name, '(vacant)') AS name, h.term_start, h.term_end
+FROM office g
+         LEFT JOIN head h ON h.country = g.country
+    AND h.term_start <= :date
+    AND (h.term_end IS NULL OR h.term_end >= :date)
+ORDER BY g.country ASC
+----
+
+====
+
+[[HOG-SCHEMA-A-03]]
+==== HOG-SCHEMA-A-03: The incumbents' contemporaries
+
+On the day each incumbent took office, who headed the other offices?
+One row per pair, the incumbent first.
+
+.`_schema_exercises_03_advanced.sql`, HOG-SCHEMA-A-03
+[%collapsible]
+====
+[source,sql]
+----
+SELECT i.country     AS country,
+       i.name        AS incumbent,
+       i.term_start  AS since,
+       o.country     AS other,
+       g.head_title,
+       o.name        AS head
+FROM head i
+         JOIN head o ON o.country <> i.country
+    AND o.term_start <= i.term_start
+    AND (o.term_end IS NULL OR o.term_end >= i.term_start)
+         JOIN office g ON g.country = o.country
+WHERE i.term_end IS NULL
+ORDER BY i.country ASC, o.country ASC
+----
+
+....
++---------+-----------------+------------+-------+----------------------------+-----------------+
+| country |    incumbent    |   since    | other |         head_title         |      head       |
++---------+-----------------+------------+-------+----------------------------+-----------------+
+| FR      | Emmanuel Macron | 2022-05-14 | GB    | Prime Minister             | Boris Johnson   |
+| FR      | Emmanuel Macron | 2022-05-14 | JP    | 内閣総理大臣               | 岸田文雄        |
+| FR      | Emmanuel Macron | 2022-05-14 | KR    | 대통령                     | 윤석열          |
+| FR      | Emmanuel Macron | 2022-05-14 | US    | President                  | Joe Biden       |
+| GB      | Andy Burnham    | 2026-07-20 | FR    | Président de la République | Emmanuel Macron |
+| GB      | Andy Burnham    | 2026-07-20 | JP    | 内閣総理大臣               | 高市早苗        |
+| GB      | Andy Burnham    | 2026-07-20 | KR    | 대통령                     | 이재명          |
+| GB      | Andy Burnham    | 2026-07-20 | US    | President                  | Donald Trump    |
+| JP      | 高市早苗        | 2026-02-18 | FR    | Président de la République | Emmanuel Macron |
+| JP      | 高市早苗        | 2026-02-18 | GB    | Prime Minister             | Keir Starmer    |
+| JP      | 高市早苗        | 2026-02-18 | KR    | 대통령                     | 이재명          |
+| JP      | 高市早苗        | 2026-02-18 | US    | President                  | Donald Trump    |
+| KR      | 이재명          | 2025-06-04 | FR    | Président de la République | Emmanuel Macron |
+| KR      | 이재명          | 2025-06-04 | GB    | Prime Minister             | Keir Starmer    |
+| KR      | 이재명          | 2025-06-04 | JP    | 内閣総理大臣               | 石破茂          |
+| KR      | 이재명          | 2025-06-04 | US    | President                  | Donald Trump    |
+| US      | Donald Trump    | 2025-01-20 | FR    | Président de la République | Emmanuel Macron |
+| US      | Donald Trump    | 2025-01-20 | GB    | Prime Minister             | Keir Starmer    |
+| US      | Donald Trump    | 2025-01-20 | JP    | 内閣総理大臣               | 石破茂          |
+| US      | Donald Trump    | 2025-01-20 | KR    | 대통령                     | 윤석열          |
++---------+-----------------+------------+-------+----------------------------+-----------------+
+....
+
+====
+

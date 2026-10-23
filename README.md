@@ -75,6 +75,7 @@ WHERE term_start <= '1990-01-01' AND (term_end IS NULL OR term_end >= '1990-01-0
 
 Column by column: [db/heads_of_governments.sqlite3.md](db/heads_of_governments.sqlite3.md).
 Queries to profile each table, and exercises on them, are under [src/test/sql](src/test/sql).
+The exercises are listed, with their ids, in [EXERCISES.asciidoc](EXERCISES.asciidoc).
 
 ## The data
 

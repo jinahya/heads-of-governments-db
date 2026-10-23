@@ -1,0 +1,199 @@
+# Registry of the exercises in EXERCISES_COORDINATES.asciidoc and src/test/sql/*_exercises_*.sql.
+#
+# An id is HOG-<SECTION>-<TIER>-<NN>: the table the exercise reads alone, or SCHEMA for one that reads more than one,
+# the tier (B for Basic, I for Intermediate, A for Advanced), and a number within that section and tier.
+#
+# Ids are permanent. A new exercise takes the next unused number of its section and tier; an exercise that moves or
+# changes tier keeps its id; an id of a removed exercise is marked `retired: true` and never reused. EXERCISES_COORDINATES.asciidoc
+# carries each id as the anchor and the prefix of the exercise's heading, and the .sql file carries it in the marker
+# above the statement, followed by the title.
+#
+# `test` is the test, by its method, that runs the exercise over plain JDBC and checks its rows; most exercises have none.
+
+
+# ---- head
+
+- id: HOG-HEAD-B-01
+  section: "HEAD"
+  tier: Basic
+  title: "Who held office on a day"
+  sql: src/test/sql/head_exercises_01_basic.sql
+- id: HOG-HEAD-B-02
+  section: "HEAD"
+  tier: Basic
+  title: "One country's list"
+  sql: src/test/sql/head_exercises_01_basic.sql
+  test: HeadsOfGovernments_Exercises_Test#heads
+- id: HOG-HEAD-B-03
+  section: "HEAD"
+  tier: Basic
+  title: "The incumbents"
+  sql: src/test/sql/head_exercises_01_basic.sql
+- id: HOG-HEAD-B-04
+  section: "HEAD"
+  tier: Basic
+  title: "Terms by name"
+  sql: src/test/sql/head_exercises_01_basic.sql
+- id: HOG-HEAD-B-05
+  section: "HEAD"
+  tier: Basic
+  title: "Terms that began in a year"
+  sql: src/test/sql/head_exercises_01_basic.sql
+- id: HOG-HEAD-I-01
+  section: "HEAD"
+  tier: Intermediate
+  title: "The longest terms of a country"
+  sql: src/test/sql/head_exercises_02_intermediate.sql
+- id: HOG-HEAD-I-02
+  section: "HEAD"
+  tier: Intermediate
+  title: "More than one term"
+  sql: src/test/sql/head_exercises_02_intermediate.sql
+- id: HOG-HEAD-I-03
+  section: "HEAD"
+  tier: Intermediate
+  title: "Age on taking office"
+  sql: src/test/sql/head_exercises_02_intermediate.sql
+- id: HOG-HEAD-I-04
+  section: "HEAD"
+  tier: Intermediate
+  title: "Terms per party"
+  sql: src/test/sql/head_exercises_02_intermediate.sql
+- id: HOG-HEAD-I-05
+  section: "HEAD"
+  tier: Intermediate
+  title: "Living former heads"
+  sql: src/test/sql/head_exercises_02_intermediate.sql
+- id: HOG-HEAD-I-06
+  section: "HEAD"
+  tier: Intermediate
+  title: "Terms begun per decade"
+  sql: src/test/sql/head_exercises_02_intermediate.sql
+- id: HOG-HEAD-I-07
+  section: "HEAD"
+  tier: Intermediate
+  title: "The latest terms of each country"
+  sql: src/test/sql/head_exercises_02_intermediate.sql
+- id: HOG-HEAD-I-08
+  section: "HEAD"
+  tier: Intermediate
+  title: "The first and the latest terms of each country"
+  sql: src/test/sql/head_exercises_02_intermediate.sql
+- id: HOG-HEAD-I-09
+  section: "HEAD"
+  tier: Intermediate
+  title: "The first two terms of each country"
+  sql: src/test/sql/head_exercises_02_intermediate.sql
+- id: HOG-HEAD-I-10
+  section: "HEAD"
+  tier: Intermediate
+  title: "Two or more terms, the top three per country"
+  sql: src/test/sql/head_exercises_02_intermediate.sql
+- id: HOG-HEAD-I-11
+  section: "HEAD"
+  tier: Intermediate
+  title: "Party share of completed terms, the top three per country"
+  sql: src/test/sql/head_exercises_02_intermediate.sql
+  test: HeadsOfGovernments_Exercises_Test#partyShareTopThree
+- id: HOG-HEAD-A-01
+  section: "HEAD"
+  tier: Advanced
+  title: "Vacancies"
+  sql: src/test/sql/head_exercises_03_advanced.sql
+- id: HOG-HEAD-A-02
+  section: "HEAD"
+  tier: Advanced
+  title: "Longest in office"
+  sql: src/test/sql/head_exercises_03_advanced.sql
+- id: HOG-HEAD-A-03
+  section: "HEAD"
+  tier: Advanced
+  title: "The longest run of one party"
+  sql: src/test/sql/head_exercises_03_advanced.sql
+- id: HOG-HEAD-A-04
+  section: "HEAD"
+  tier: Advanced
+  title: "Every party of a head, one per row"
+  sql: src/test/sql/head_exercises_03_advanced.sql
+- id: HOG-HEAD-A-05
+  section: "HEAD"
+  tier: Advanced
+  title: "Predecessor and successor"
+  sql: src/test/sql/head_exercises_03_advanced.sql
+
+# ---- office
+
+- id: HOG-OFFICE-B-01
+  section: "OFFICE"
+  tier: Basic
+  title: "An office by country"
+  sql: src/test/sql/office_exercises_01_basic.sql
+- id: HOG-OFFICE-B-02
+  section: "OFFICE"
+  tier: Basic
+  title: "The offices"
+  sql: src/test/sql/office_exercises_01_basic.sql
+  test: HeadsOfGovernments_Exercises_Test#offices
+- id: HOG-OFFICE-I-01
+  section: "OFFICE"
+  tier: Intermediate
+  title: "Offices by the kind of head"
+  sql: src/test/sql/office_exercises_02_intermediate.sql
+- id: HOG-OFFICE-I-02
+  section: "OFFICE"
+  tier: Intermediate
+  title: "Titles outside ASCII"
+  sql: src/test/sql/office_exercises_02_intermediate.sql
+- id: HOG-OFFICE-A-01
+  section: "OFFICE"
+  tier: Advanced
+  title: "What number counts, in a phrase"
+  sql: src/test/sql/office_exercises_03_advanced.sql
+
+# ---- schema
+
+- id: HOG-SCHEMA-B-01
+  section: "SCHEMA"
+  tier: Basic
+  title: "The incumbents, with their titles"
+  sql: src/test/sql/_schema_exercises_01_basic.sql
+- id: HOG-SCHEMA-B-02
+  section: "SCHEMA"
+  tier: Basic
+  title: "A country's list, with the rule for its numbers"
+  sql: src/test/sql/_schema_exercises_01_basic.sql
+- id: HOG-SCHEMA-B-03
+  section: "SCHEMA"
+  tier: Basic
+  title: "Terms per office"
+  sql: src/test/sql/_schema_exercises_01_basic.sql
+- id: HOG-SCHEMA-I-01
+  section: "SCHEMA"
+  tier: Intermediate
+  title: "Presidents against prime ministers"
+  sql: src/test/sql/_schema_exercises_02_intermediate.sql
+- id: HOG-SCHEMA-I-02
+  section: "SCHEMA"
+  tier: Intermediate
+  title: "Numbering in practice"
+  sql: src/test/sql/_schema_exercises_02_intermediate.sql
+- id: HOG-SCHEMA-I-03
+  section: "SCHEMA"
+  tier: Intermediate
+  title: "The span of each list"
+  sql: src/test/sql/_schema_exercises_02_intermediate.sql
+- id: HOG-SCHEMA-A-01
+  section: "SCHEMA"
+  tier: Advanced
+  title: "Each office's longest-serving head"
+  sql: src/test/sql/_schema_exercises_03_advanced.sql
+- id: HOG-SCHEMA-A-02
+  section: "SCHEMA"
+  tier: Advanced
+  title: "Every office on a day, vacant or not"
+  sql: src/test/sql/_schema_exercises_03_advanced.sql
+- id: HOG-SCHEMA-A-03
+  section: "SCHEMA"
+  tier: Advanced
+  title: "The incumbents' contemporaries"
+  sql: src/test/sql/_schema_exercises_03_advanced.sql

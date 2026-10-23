@@ -37,8 +37,9 @@ src/test/resources/
   logback-test.xml                                     console logging, the message alone
 src/test/sql/
   office.sql, head.sql                                 profiling queries, a section per column
-  office_exercises.sql, head_exercises.sql             exercises on one table, Basic / Intermediate / Advanced
-  whole_schema_exercises.sql                           exercises that read both tables
+  office_exercises_0N_<level>.sql                      exercises on one table, a file per level
+  head_exercises_0N_<level>.sql                        (01_basic, 02_intermediate, 03_advanced)
+  _schema_exercises_0N_<level>.sql                     exercises that read both tables, a file per level
 db/
   heads_of_governments.sqlite3                         the output; committed, rebuilt on every run
   heads_of_governments.sqlite3.md                      the schema, a Mermaid ERD and column notes; committed
@@ -126,10 +127,14 @@ runs one whole.
 - `office.sql` and `head.sql` profile a table, a section per column under a ruler, each query
   prefaced by what it looks for and what the result should be; `-- no rows:` marks a check that passes
   when nothing comes back. The last section covers the table as a whole.
-- `*_exercises.sql` pose a problem per query, under `BASIC`, `INTERMEDIATE` and `ADVANCED` rulers. Each
+- `<table>_exercises_<nn>_<level>.sql` pose a problem per query, a file per level (`01_basic`, `02_intermediate`,
+  `03_advanced`; the number only orders the files), and `_schema_exercises_<nn>_<level>.sql` the same for the whole
+  schema. Each
   carries an id, `HOG-<TABLE>-<B|I|A>-<nn>` (`HOG-SCHEMA-` for the whole schema), and restates the
   request it answers. Parameters are bind variables (`:name`); the shell binds one with
-  `.parameter set :name 'value'`.
+  `.parameter set :name 'value'`. `EXERCISES_COORDINATES.asciidoc` states every problem, and `EXERCISES.yaml` registers every
+  id; ids are permanent, a new exercise takes the next unused number of its section and tier, and a removed one's id
+  is marked `retired: true`, never reused.
 
 Every file starts with the Apache 2.0 header in the `-- #%L` form, rulers are 120 columns, and lines
 stay within 120. A sort key that can be NULL (`term_end`, `died`, an aggregate of either, `sqlite_stat1.idx`)
