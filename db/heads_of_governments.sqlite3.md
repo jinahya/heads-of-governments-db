@@ -31,7 +31,11 @@ CREATE TABLE head (
 );
 
 CREATE INDEX idx_head_country_number ON head (country, number);
+CREATE INDEX idx_head_term_start ON head (term_start);
+CREATE INDEX idx_head_term_end ON head (term_end);
 CREATE INDEX idx_head_name ON head (name);
+CREATE INDEX idx_head_born ON head (born);
+CREATE INDEX idx_head_died ON head (died);
 ```
 
 ## As a diagram

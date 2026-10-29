@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="332" viewBox="0 0 704 332">
-  <rect width="704" height="332" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="404" viewBox="0 0 704 404">
+  <rect width="704" height="404" fill="#ffffff"/>
   <g id="head">
-    <rect x="24" y="24" width="656" height="284" rx="6" fill="#ffffff" stroke="#d0d7de"/>
+    <rect x="24" y="24" width="656" height="356" rx="6" fill="#ffffff" stroke="#d0d7de"/>
     <path d="M24 56h656v-26a6 6 0 0 0 -6 -6h-644a6 6 0 0 0 -6 6z" fill="#f6f8fa"/>
     <line x1="24" y1="56" x2="680" y2="56" stroke="#d0d7de"/>
     <text x="36" y="45" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="14" font-weight="600" fill="#1f2328">head</text>
@@ -18,7 +18,11 @@
     <text x="36" y="226" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#1f2328" xml:space="preserve">    born        INTEGER  NOT NULL  <tspan font-weight="400" fill="#57606a">the year of birth</tspan></text>
     <text x="36" y="248" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#1f2328" xml:space="preserve">    died        INTEGER  NULL      <tspan font-weight="400" fill="#57606a">the year of death; NULL while living</tspan></text>
     <line x1="24" y1="260" x2="680" y2="260" stroke="#d0d7de"/>
-    <text x="36" y="273" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#57606a">idx_head_country_number (country, number)</text>
-    <text x="36" y="291" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#57606a">idx_head_name (name)</text>
+    <text x="36" y="273" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#57606a">idx_head_born (born)</text>
+    <text x="36" y="291" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#57606a">idx_head_country_number (country, number)</text>
+    <text x="36" y="309" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#57606a">idx_head_died (died)</text>
+    <text x="36" y="327" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#57606a">idx_head_name (name)</text>
+    <text x="36" y="345" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#57606a">idx_head_term_end (term_end)</text>
+    <text x="36" y="363" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#57606a">idx_head_term_start (term_start)</text>
   </g>
 </svg>

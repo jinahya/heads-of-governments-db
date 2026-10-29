@@ -75,7 +75,11 @@ class HeadsOfGovernments_Sqlite_Test {
                 CHECK (died IS NULL OR died >= born)
             )""",
             "CREATE INDEX idx_head_country_number ON head (country, number)",
-            "CREATE INDEX idx_head_name ON head (name)"
+            "CREATE INDEX idx_head_term_start ON head (term_start)",
+            "CREATE INDEX idx_head_term_end ON head (term_end)",
+            "CREATE INDEX idx_head_name ON head (name)",
+            "CREATE INDEX idx_head_born ON head (born)",
+            "CREATE INDEX idx_head_died ON head (died)"
     );
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -204,7 +208,7 @@ class HeadsOfGovernments_Sqlite_Test {
             assertThat(count(connection, "SELECT COUNT(*) FROM pragma_foreign_key_check")).as("foreign_key_check rows").isZero();
             assertThat(count(connection, "SELECT COUNT(*) FROM sqlite_stat1")).as("ANALYZE ran").isPositive();
             assertThat(count(connection, "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name LIKE 'idx_head_%'"))
-                    .as("indexes").isEqualTo(2);
+                    .as("indexes").isEqualTo(6);
         }
         // the last word: compact the file, and leave it with no free page
         try (var connection = DriverManager.getConnection(url())) {

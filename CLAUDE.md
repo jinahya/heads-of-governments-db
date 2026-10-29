@@ -99,9 +99,9 @@ notes saying the same thing.
   number across terms, so `number` repeats. The schema declares no unique constraint on
   `(country, term_start)`, by decision; the generator asserts it after the inserts instead. Dates are
   ISO-8601 text, SQLite's convention. `term_end IS NULL` is the incumbent.
-- Indexes: `(country, number)` and `(name)`, both plain. There is no unique index on the incumbent,
-  by decision: the schema is for consumers, and the generator asserts one incumbent per office
-  after the inserts instead.
+- Indexes: `(country, number)`, `(term_start)`, `(term_end)`, `(name)`, `(born)` and `(died)`, all plain.
+  There is no unique index on the incumbent, by decision: the schema is for consumers, and the
+  generator asserts one incumbent per office after the inserts instead.
 
 Names are country codes and snake_case; keep them so. If a country ever contributes a second office
 (South Korea has a prime minister too), the key of `office` becomes `(country, head_kind)` and

@@ -34,7 +34,11 @@
 --     CHECK (died IS NULL OR died >= born)
 -- )
 -- CREATE INDEX idx_head_country_number ON head (country, number)
+-- CREATE INDEX idx_head_term_start ON head (term_start)
+-- CREATE INDEX idx_head_term_end ON head (term_end)
 -- CREATE INDEX idx_head_name ON head (name)
+-- CREATE INDEX idx_head_born ON head (born)
+-- CREATE INDEX idx_head_died ON head (died)
 --
 -- Run the file as a whole: sqlite3 db/heads_of_governments.sqlite3 '.read src/test/sql/head.sql'
 --
