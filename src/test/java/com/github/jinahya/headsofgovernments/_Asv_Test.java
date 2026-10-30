@@ -37,22 +37,22 @@ class _Asv_Test {
     /** Every list, by base name; each exists as {@code .txt} (the source) and {@code .asv} (the flattened form). */
     static final String[] BASE_NAMES = {
             "list_of_offices",
-            "list_of_presidents_of_france",
-            "list_of_presidents_of_japan",
-            "list_of_presidents_of_south_korea",
-            "list_of_presidents_of_the_united_states",
-            "list_of_prime_ministers_of_the_united_kingdom"
+            "list_of_heads_of_FR",
+            "list_of_heads_of_GB",
+            "list_of_heads_of_JP",
+            "list_of_heads_of_KR",
+            "list_of_heads_of_US"
     };
 
     // -----------------------------------------------------------------------------------------------------------------
     @ParameterizedTest
     @ValueSource(strings = {
             "list_of_offices",
-            "list_of_presidents_of_france",
-            "list_of_presidents_of_japan",
-            "list_of_presidents_of_south_korea",
-            "list_of_presidents_of_the_united_states",
-            "list_of_prime_ministers_of_the_united_kingdom"
+            "list_of_heads_of_FR",
+            "list_of_heads_of_GB",
+            "list_of_heads_of_JP",
+            "list_of_heads_of_KR",
+            "list_of_heads_of_US"
     })
     void asv_is_the_flattened_txt(final String baseName) throws Exception {
         final var expected = _Asv.flattenResource(baseName + ".txt");
@@ -67,11 +67,11 @@ class _Asv_Test {
     @ParameterizedTest
     @ValueSource(strings = {
             "list_of_offices",
-            "list_of_presidents_of_france",
-            "list_of_presidents_of_japan",
-            "list_of_presidents_of_south_korea",
-            "list_of_presidents_of_the_united_states",
-            "list_of_prime_ministers_of_the_united_kingdom"
+            "list_of_heads_of_FR",
+            "list_of_heads_of_GB",
+            "list_of_heads_of_JP",
+            "list_of_heads_of_KR",
+            "list_of_heads_of_US"
     })
     void txt_holds_records_only(final String baseName) throws Exception {
         final var lines = _Asv.readText(baseName + ".txt").lines().toList();
@@ -83,11 +83,11 @@ class _Asv_Test {
 
     @ParameterizedTest
     @ValueSource(strings = {
-            "list_of_presidents_of_france",
-            "list_of_presidents_of_japan",
-            "list_of_presidents_of_south_korea",
-            "list_of_presidents_of_the_united_states",
-            "list_of_prime_ministers_of_the_united_kingdom"
+            "list_of_heads_of_FR",
+            "list_of_heads_of_GB",
+            "list_of_heads_of_JP",
+            "list_of_heads_of_KR",
+            "list_of_heads_of_US"
     })
     void every_record_of_a_country_list_has_seven_fields(final String baseName) throws Exception {
         final var lines = _Asv.readText(baseName + ".txt").lines().toList();

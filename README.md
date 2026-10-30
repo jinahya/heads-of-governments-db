@@ -2,11 +2,12 @@
 
 Generates an SQLite database of the heads of government of five countries -- the presidents of
 France, South Korea and the United States, the prime ministers of Japan and the United Kingdom --
-from hand-maintained text lists.
+from hand-maintained text lists, and ships it in a jar as a classpath resource.
 
 ```sh
 $ ./mvnw test
-$ sqlite3 db/heads_of_governments.sqlite3 'SELECT country, number, name, term_start FROM head WHERE term_end IS NULL'
+$ sqlite3 src/main/resources/com/github/jinahya/headsofgovernments/heads_of_governments.sqlite3 \
+    'SELECT country, number, name, term_start FROM head WHERE term_end IS NULL'
 FR|25|Emmanuel Macron|2022-05-14
 GB|59|Andy Burnham|2026-07-20
 JP|105|高市早苗|2026-02-18
@@ -14,12 +15,35 @@ KR|21|이재명|2025-06-04
 US|47|Donald Trump|2025-01-20
 ```
 
-That is the whole project. Nothing is published; the database is the deliverable, and the build is
-how you get it. It needs a JDK 25 or newer.
+That is the whole project: the jar holds the database and nothing else, no classes and no
+dependencies. Building needs a JDK 25 or newer.
+
+## Using it
+
+Depend on the jar, bring [`sqlite-jdbc`](https://github.com/xerial/sqlite-jdbc) yourself, and open
+the database as a resource; `sqlite-jdbc` extracts it to a temporary file and opens that.
+
+```xml
+<dependency>
+  <groupId>io.github.jinahya</groupId>
+  <artifactId>heads-of-governments-db</artifactId>
+  <version>...</version>
+</dependency>
+```
+
+```java
+try (var connection = DriverManager.getConnection(
+        "jdbc:sqlite::resource:com/github/jinahya/headsofgovernments/heads_of_governments.sqlite3")) {
+    ...
+}
+```
+
+Each release replaces the whole file; the schema below is the contract, and an `id` is not stable
+from one release to the next.
 
 ## The database
 
-`db/heads_of_governments.sqlite3`, two tables.
+`src/main/resources/com/github/jinahya/headsofgovernments/heads_of_governments.sqlite3`, two tables.
 
 | table    | rows | one row is                                                                |
 |----------|-----:|---------------------------------------------------------------------------|
@@ -81,7 +105,8 @@ Queries to profile each table, and exercises on them, are under [src/test/sql](s
 
 ## The data
 
-Under `src/main/resources`, one list per table, each in two forms.
+Under `src/test/resources`, one list per table, each in two forms. They are the generator's input,
+not part of the jar.
 
 The **`.txt`** files are the source, edited by hand: one record per line, a `|` between fields, no
 header row and no comments. The five country lists share one layout, `number`, `term_start`,
@@ -101,11 +126,15 @@ The **`.asv`** files are the same records as ASCII separated values -- `US` (0x1
 derived from the `.txt` and the build fails if one is stale. After editing a `.txt`:
 
 ```sh
-cd src/main/resources
+cd src/test/resources
 for t in list_of_*.txt; do
   grep -v '^$' "$t" | tr '|' '\037' | paste -sd $'\036' - | tr -d '\n' > "${t%.txt}.asv"
 done
 ```
+
+then build twice. The first build regenerates the database under `src/main/resources` and fails,
+because the jar it packs was copied before the tests ran and still holds the old file; the second
+packs the new one and passes. Commit the database with the lists.
 
 ### Sources and notes
 

@@ -4,11 +4,19 @@ Guidance for Claude Code when working in this repository.
 
 ## What this project is
 
-A generator, and nothing else. `./mvnw test` reads the lists under `src/main/resources` and writes
-`db/heads_of_governments.sqlite3`, an SQLite database of the heads of government of five countries.
-The project publishes no artifact: there is no main source, the jar is empty, and `maven.install.skip`
-and `maven.deploy.skip` are set. The generated file is committed, so whoever wants the database can
-take it without building; a change to a list means rebuilding and committing the file with it.
+A generator of one resource. `./mvnw test` reads the lists under `src/test/resources` and
+writes `src/main/resources/com/github/jinahya/headsofgovernments/heads_of_governments.sqlite3`, an
+SQLite database of the heads of government of five countries. The jar carries that file and nothing else: there is no main source and
+no runtime dependency. A consumer brings `sqlite-jdbc` and opens it with
+`jdbc:sqlite::resource:com/github/jinahya/headsofgovernments/heads_of_governments.sqlite3`. The
+schema is the contract; each release replaces the whole file.
+
+**It is chicken and egg, by design.** `process-resources` copies the committed database into
+`target/classes` before the tests regenerate it, so a jar carries the file as the previous build left
+it. Generation is reproducible byte for byte, so `HeadsOfGovernments_Sqlite_Test.generate` ends by
+comparing the fresh file with the classpath copy and fails when they differ: after a change to a list,
+the first build fails, the second passes, and the database is committed with the list. Releases are
+cut from a clean checkout, so they ship exactly what was committed.
 
 The sibling `../kftc-financial-institution-info` was the model for this, down to the `ANALYZE` and
 `VACUUM` at the end of the run.
@@ -16,26 +24,28 @@ The sibling `../kftc-financial-institution-info` was the model for this, down to
 ## Layout
 
 ```
-src/main/resources/
+src/main/resources/com/github/jinahya/headsofgovernments/
+  heads_of_governments.sqlite3                         the output, and all the jar holds; committed
+src/test/resources/
   list_of_offices.txt                                  the five offices, hand-edited
   list_of_offices.asv                                  the same, flattened (generated)
-  list_of_presidents_of_france.txt / .asv              one country's heads, hand-edited / flattened
-  list_of_presidents_of_japan.txt / .asv
-  list_of_presidents_of_south_korea.txt / .asv
-  list_of_presidents_of_the_united_states.txt / .asv
-  list_of_prime_ministers_of_the_united_kingdom.txt / .asv
+  list_of_heads_of_FR.txt / .asv                       one country's heads, hand-edited / flattened
+  list_of_heads_of_GB.txt / .asv
+  list_of_heads_of_JP.txt / .asv
+  list_of_heads_of_KR.txt / .asv
+  list_of_heads_of_US.txt / .asv
 src/test/java/com/github/jinahya/headsofgovernments/
   _Asv.java                                            reads .asv; flattens a delimited .txt to .asv
   Office.java, Head.java                               records, one per table, each with from(String[])
   _Asv_Test.java                                       the .asv files are current and parse as expected
   HeadsOfGovernments_Sqlite_Test.java                  the generator; holds the DDL
   HeadsOfGovernments_Erd_Test.java                     draws the ERD .svg files from the DDL
+  HeadsOfGovernments_Resource_Test.java                opens the database as a consumer does, via :resource:
 src/test/sql/
   office.sql, head.sql                                 profiling queries, a section per column
   office_exercises.sql, head_exercises.sql             exercises on one table, Basic / Intermediate / Advanced
   whole_schema_exercises.sql                           exercises that read both tables
 db/
-  heads_of_governments.sqlite3                         the output; committed, rebuilt on every run
   heads_of_governments.sqlite3.md                      the schema, a Mermaid ERD and column notes; committed
   erd/all.svg                                          the ERD as an image; generated, committed
   erd/office.svg, erd/head.svg                         one table alone; generated, committed
@@ -57,7 +67,7 @@ They are what the generator reads, so they are committed, and `_Asv_Test` fails 
 not byte-for-byte its `.txt` flattened. After editing a `.txt`, regenerate its `.asv`:
 
 ```sh
-cd src/main/resources
+cd src/test/resources
 for t in list_of_*.txt; do
   grep -v '^$' "$t" | tr '|' '\037' | paste -sd $'\036' - | tr -d '\n' > "${t%.txt}.asv"
 done
@@ -111,7 +121,7 @@ Names are country codes and snake_case; keep them so. If a country ever contribu
 
 `src/test/sql` holds hand-written SQL against the generated database, after the sibling
 `../oracle-sample-schemas-persistence`. Nothing runs them in the build; they are for a reader with the
-`sqlite3` tool or an IDE, and `sqlite3 db/heads_of_governments.sqlite3 '.read src/test/sql/head.sql'`
+`sqlite3` tool or an IDE, and `sqlite3 <the database> '.read src/test/sql/head.sql'`
 runs one whole.
 
 - `office.sql` and `head.sql` profile a table, a section per column under a ruler, each query
@@ -130,7 +140,8 @@ a comment that names a country, so rerun the files after one and read what they 
 ## Build
 
 ```sh
-./mvnw test          # generates db/heads_of_governments.sqlite3; the whole build
+./mvnw test          # regenerates the database; fails once after a list changes, see above
+./mvnw verify        # the same, plus the jar and the licence check
 ./mvnw clean test    # the same from scratch
 ```
 
@@ -142,7 +153,8 @@ sets `PRAGMA auto_vacuum = NONE`, runs `ANALYZE` after the inserts, reopens the 
 counts, incumbents, foreign keys and the indexes, and ends with `VACUUM`, so the file is compact. Inspect the result with the `sqlite3` tool:
 
 ```sh
-sqlite3 db/heads_of_governments.sqlite3 '.schema' 'SELECT country, name FROM head WHERE term_end IS NULL'
+sqlite3 src/main/resources/com/github/jinahya/headsofgovernments/heads_of_governments.sqlite3 \
+  '.schema' 'SELECT country, name FROM head WHERE term_end IS NULL'
 ```
 
 ## Dependencies

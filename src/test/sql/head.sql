@@ -40,7 +40,9 @@
 -- CREATE INDEX idx_head_born ON head (born)
 -- CREATE INDEX idx_head_died ON head (died)
 --
--- Run the file as a whole: sqlite3 db/heads_of_governments.sqlite3 '.read src/test/sql/head.sql'
+-- Run the file as a whole, from the project directory:
+--   sqlite3 src/main/resources/com/github/jinahya/headsofgovernments/heads_of_governments.sqlite3 \
+--     '.read src/test/sql/head.sql'
 --
 
 

@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 
 /**
  * Reads ASCII separated values: {@code US} ({@code 0x1F}) between fields, {@code RS} ({@code 0x1E}) between records,
- * nothing before the first record and nothing after the last. Every {@code .asv} under {@code src/main/resources} is
+ * nothing before the first record and nothing after the last. Every {@code .asv} under {@code src/test/resources} is
  * the flattened form of the {@code .txt} of the same name, produced by {@link #flatten(List)}: blank lines dropped,
  * each {@value #DELIMITER} replaced with {@code US}, and the lines joined with {@code RS}. The lists carry no comments
  * and no header row; what their columns mean is written in {@code README.md}.

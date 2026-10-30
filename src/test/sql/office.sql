@@ -27,7 +27,9 @@
 --     numbering  TEXT NOT NULL
 -- ) WITHOUT ROWID
 --
--- Run the file as a whole: sqlite3 db/heads_of_governments.sqlite3 '.read src/test/sql/office.sql'
+-- Run the file as a whole, from the project directory:
+--   sqlite3 src/main/resources/com/github/jinahya/headsofgovernments/heads_of_governments.sqlite3 \
+--     '.read src/test/sql/office.sql'
 --
 
 

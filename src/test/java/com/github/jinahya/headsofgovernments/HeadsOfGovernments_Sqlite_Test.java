@@ -34,13 +34,20 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Generates {@code db/heads_of_governments.sqlite3} from the {@code .asv} resources, then reopens it and checks it.
- * The schema is documented in {@code db/heads_of_governments.sqlite3.md}; keep the two in step.
+ * Generates {@link #RESOURCE_NAME} under {@code src/main/resources} from the {@code .asv} resources, then reopens it
+ * and checks it. The schema is documented in {@code db/heads_of_governments.sqlite3.md}; keep the two in step.
+ *
+ * <p>The jar carries what {@code process-resources} copied before this test ran, which is the file as the previous
+ * build left it. {@link #generate()} therefore fails when the two differ, so a build never passes with a stale jar:
+ * rerun it, and commit the file.</p>
  */
 class HeadsOfGovernments_Sqlite_Test {
 
+    /** The database's name as a classpath resource; what a consumer opens with {@code jdbc:sqlite::resource:}. */
+    static final String RESOURCE_NAME = "com/github/jinahya/headsofgovernments/heads_of_governments.sqlite3";
+
     /** The file to generate, relative to the project directory, which is where surefire runs. */
-    static final Path PATH = Path.of("db", "heads_of_governments.sqlite3");
+    static final Path PATH = Path.of("src", "main", "resources").resolve(RESOURCE_NAME);
 
     static final String TABLE_OFFICE = "office";
 
@@ -222,5 +229,13 @@ class HeadsOfGovernments_Sqlite_Test {
         }
         assertThat(PATH).isRegularFile();
         assertThat(Files.size(PATH)).isPositive();
+        // the copy on the classpath is the one the jar will carry; a run is reproducible, so it must be this one
+        try (var stream = HeadsOfGovernments_Sqlite_Test.class.getResourceAsStream('/' + RESOURCE_NAME)) {
+            assertThat(stream).as("%s on the classpath", RESOURCE_NAME).isNotNull();
+            assertThat(stream.readAllBytes())
+                    .as("%s changed, so the jar of this build would carry the old one; rerun the build and commit it",
+                        PATH)
+                    .isEqualTo(Files.readAllBytes(PATH));
+        }
     }
 }
