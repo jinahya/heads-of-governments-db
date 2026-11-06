@@ -38,8 +38,7 @@ try (var connection = DriverManager.getConnection(
 }
 ```
 
-Each release replaces the whole file; the schema below is the contract, and an `id` is not stable
-from one release to the next.
+Each release replaces the whole file; the schema below is the contract.
 
 ## The database
 
@@ -48,7 +47,7 @@ from one release to the next.
 | table    | rows | one row is                                                                |
 |----------|-----:|---------------------------------------------------------------------------|
 | `office` |    5 | the office the head of government holds, keyed by ISO 3166-1 alpha-2 code |
-| `head`   |  285 | one term of office, keyed by a surrogate `id`                             |
+| `head`   |  285 | one term of office, keyed by `(country, term_start)`                      |
 
 ```sql
 CREATE TABLE office (
@@ -62,7 +61,6 @@ CREATE TABLE office (
 
 CREATE TABLE head (
     -- one term of a head of government
-    id         INTEGER PRIMARY KEY,                          -- the rowid; assigned by the build, not stable
     country    TEXT    NOT NULL REFERENCES office (country), -- the office's country
     number     INTEGER NOT NULL,                             -- the term number, as office.numbering says
     term_start TEXT    NOT NULL,                             -- ISO-8601 date, yyyy-MM-dd
@@ -71,11 +69,11 @@ CREATE TABLE head (
     party      TEXT    NOT NULL,                             -- one token; / separates successive parties
     born       INTEGER NOT NULL,                             -- the year of birth
     died       INTEGER,                                      -- the year of death; NULL while living
+    PRIMARY KEY (country, term_start),
     CHECK (term_end IS NULL OR term_end >= term_start),
     CHECK (died IS NULL OR died >= born)
-);
+) WITHOUT ROWID;
 
-CREATE UNIQUE INDEX uq_head_country_term_start ON head (country, term_start);
 CREATE INDEX idx_head_country_number ON head (country, number);
 CREATE INDEX idx_head_term_start ON head (term_start);
 CREATE INDEX idx_head_term_end ON head (term_end);
@@ -98,10 +96,9 @@ erDiagram
     }
 
     head {
-        INTEGER id         PK "the rowid; assigned by the generator, not stable across runs"
-        TEXT    country    FK, UK "references office (country); unique with term_start"
+        TEXT    country    PK, FK "references office (country); the key with term_start"
         INTEGER number        "the term number, counted as office.numbering says"
-        TEXT    term_start UK "ISO 8601 calendar date (yyyy-MM-dd); unique with country"
+        TEXT    term_start PK "ISO 8601 calendar date (yyyy-MM-dd); the key with country"
         TEXT    term_end      "ISO 8601 calendar date (yyyy-MM-dd); NULL for the incumbent"
         TEXT    name          "the person's name, in the source's script"
         TEXT    party         "one token; / separates successive parties"
@@ -111,7 +108,7 @@ erDiagram
 ```
 
 The crow's foot is what the schema declares: a head belongs to exactly one office, and nothing stops
-an office from having no head. `UK` marks `(country, term_start)`, which a unique index declares. The
+an office from having no head. `PK` on two columns of `head` marks its composite key. The
 generator asserts the rest after the inserts -- every office has at least one term, and exactly one
 with `term_end IS NULL` -- so the file as built is stricter than the diagram.
 
@@ -129,29 +126,27 @@ permanent and has one holder at a time. One row per country.
 
 ### `head`
 
-One term of a head of government. `id` is the key, a surrogate: it is the rowid, numbered by country
-and then by date as the generator inserts, and the file is rebuilt on every run, so an `id` is not
-stable across runs or releases; do not store one anywhere outside the file. A term is told apart by
-`(country, term_start)`, which the unique index `uq_head_country_term_start` declares. `number` could
-not serve, because it means something different in each country -- Japan counts appointments, South
-Korea elections, the United States presidencies, France and the United Kingdom persons -- and the
-last two repeat it across a person's terms. `office.numbering` spells out each country's rule.
+One term of a head of government, keyed by `(country, term_start)`: no country has two terms
+starting on the same day. The table is `WITHOUT ROWID`, like `office`, so the rows are stored in key
+order and there is no hidden rowid to rely on. `number` could not serve as the key, because it
+means something different in each country -- Japan counts appointments, South Korea elections, the
+United States presidencies, France and the United Kingdom persons -- and the last two repeat it
+across a person's terms. `office.numbering` spells out each country's rule.
 
 | name         | description                                   | notes                                        |
 |--------------|-----------------------------------------------|----------------------------------------------|
-| `id`         | the row's key                                 | rowid; 1..285 by `country`, then `term_start`, in this run |
-| `country`    | the office's country                          | references `office`                          |
+| `country`    | the office's country                          | references `office`; the key with `term_start` |
 | `number`     | the term number                               | counted as `office.numbering` says           |
-| `term_start` | the first day of the term                     | ISO-8601 date, `yyyy-MM-dd`; unique per `country` |
+| `term_start` | the first day of the term                     | ISO-8601 date, `yyyy-MM-dd`; the key with `country` |
 | `term_end`   | the last day of the term                      | ISO-8601 date; `NULL` for the incumbent      |
 | `name`       | the person's name                             | in the source's script                       |
 | `party`      | the party                                     | one token; `/` separates successive parties  |
 | `born`       | the year of birth                             |                                              |
 | `died`       | the year of death                             | `NULL` while living                          |
 
-Beyond `id`, the schema declares one uniqueness, `(country, term_start)`. It declares none on the
-incumbent, by decision: the file is built for its readers, and the generator checks the data once, at
-build time, that each office has exactly one row with `term_end IS NULL`.
+The schema declares no uniqueness beyond the key. It declares none on the incumbent, by decision:
+the file is built for its readers, and the generator checks the data once, at build time, that each
+office has exactly one row with `term_end IS NULL`.
 
 Dates are text, SQLite's own convention, so `date()` and `julianday()` work on them directly, and this
 finds who held office on a day:

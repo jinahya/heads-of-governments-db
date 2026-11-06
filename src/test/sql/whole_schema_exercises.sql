@@ -49,7 +49,7 @@ ORDER BY h.term_start ASC
 
 -- ------------------------------------------------------------------------------------ HOG-SCHEMA-B-03 Terms per office
 -- Each office with the kind of head it has and how many terms the list holds.
-SELECT g.country, g.head_kind, COUNT(h.id) AS terms
+SELECT g.country, g.head_kind, COUNT(h.term_start) AS terms
 FROM office g
          LEFT JOIN head h ON h.country = g.country
 GROUP BY g.country, g.head_kind

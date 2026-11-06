@@ -248,13 +248,12 @@ ORDER BY country ASC
 -- -------------------------------------------------------------------- HOG-HEAD-A-04 Every party of a head, one per row
 -- party may be a succession, 'A/B', when the party was renamed or changed under the head. Give the heads whose party
 -- is one, with each party on its own row and its position in the succession.
-WITH RECURSIVE parts(id, country, name, term_start, position, party, rest) AS
-                   (SELECT id, country, name, term_start, 0, NULL, party || '/'
+WITH RECURSIVE parts(country, name, term_start, position, party, rest) AS
+                   (SELECT country, name, term_start, 0, NULL, party || '/'
                     FROM head
                     WHERE party LIKE '%/%'
                     UNION ALL
-                    SELECT id,
-                           country,
+                    SELECT country,
                            name,
                            term_start,
                            position + 1,

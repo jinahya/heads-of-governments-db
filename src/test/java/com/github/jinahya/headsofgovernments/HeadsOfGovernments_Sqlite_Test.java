@@ -64,12 +64,10 @@ class HeadsOfGovernments_Sqlite_Test {
                 numbering  TEXT NOT NULL,                                -- what head.number counts for this country
                 CHECK (head_kind IN ('PRESIDENT', 'PRIME_MINISTER'))
             ) WITHOUT ROWID""",
-            // id is the rowid, so SQLite assigns it; the generator inserts by country then term_start, so it is
-            // 1..N in that order. What tells terms apart is (country, term_start), which the unique index declares.
+            // keyed by (country, term_start), which tells terms apart; number cannot, as FR and GB repeat it
             """
             CREATE TABLE head (
                 -- one term of a head of government
-                id         INTEGER PRIMARY KEY,                          -- the rowid; assigned by the build, not stable
                 country    TEXT    NOT NULL REFERENCES office (country), -- the office's country
                 number     INTEGER NOT NULL,                             -- the term number, as office.numbering says
                 term_start TEXT    NOT NULL,                             -- ISO-8601 date, yyyy-MM-dd
@@ -78,10 +76,10 @@ class HeadsOfGovernments_Sqlite_Test {
                 party      TEXT    NOT NULL,                             -- one token; / separates successive parties
                 born       INTEGER NOT NULL,                             -- the year of birth
                 died       INTEGER,                                      -- the year of death; NULL while living
+                PRIMARY KEY (country, term_start),
                 CHECK (term_end IS NULL OR term_end >= term_start),
                 CHECK (died IS NULL OR died >= born)
-            )""",
-            "CREATE UNIQUE INDEX uq_head_country_term_start ON head (country, term_start)",
+            ) WITHOUT ROWID""",
             "CREATE INDEX idx_head_country_number ON head (country, number)",
             "CREATE INDEX idx_head_term_start ON head (term_start)",
             "CREATE INDEX idx_head_term_end ON head (term_end)",
@@ -176,7 +174,7 @@ class HeadsOfGovernments_Sqlite_Test {
                         throw new java.io.UncheckedIOException(ioe);
                     }
                 })
-                // insertion order is id order; make it country, then term_start, so a run is reproducible
+                // insert in the key's order, country then term_start, so a run is reproducible
                 .sorted(Comparator.comparing(Head::country).thenComparing(Head::termStart))
                 .toList();
         // start from an empty file, so the result holds nothing but this run
@@ -205,8 +203,6 @@ class HeadsOfGovernments_Sqlite_Test {
                 assertThat(count(connection, "SELECT COUNT(*) FROM head WHERE country = '" + e.getKey() + "'"))
                         .as(e.getKey()).isEqualTo(e.getValue());
             }
-            assertThat(count(connection, "SELECT MIN(id) FROM head")).as("first id").isOne();
-            assertThat(count(connection, "SELECT MAX(id) FROM head")).as("last id").isEqualTo(heads.size());
             assertThat(count(connection, "SELECT COUNT(*) FROM head WHERE term_end IS NULL"))
                     .as("incumbents").isEqualTo(5);
             assertThat(count(connection, "SELECT COUNT(*) FROM head WHERE country NOT IN (SELECT country FROM office)"))
@@ -215,8 +211,11 @@ class HeadsOfGovernments_Sqlite_Test {
             assertThat(count(connection, "SELECT COUNT(*) FROM sqlite_stat1")).as("ANALYZE ran").isPositive();
             assertThat(count(connection, "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name LIKE 'idx_head_%'"))
                     .as("indexes").isEqualTo(6);
-            assertThat(count(connection, "SELECT COUNT(*) FROM pragma_index_list('head') WHERE \"unique\""))
-                    .as("unique indexes on head").isOne();
+            assertThat(count(connection, "SELECT COUNT(*) FROM pragma_table_info('head') WHERE pk > 0"))
+                    .as("primary key columns of head").isEqualTo(2);
+            assertThat(count(connection, "SELECT COUNT(*) FROM pragma_table_info('head') "
+                                         + "WHERE pk = 1 AND name = 'country' OR pk = 2 AND name = 'term_start'"))
+                    .as("primary key of head is (country, term_start)").isEqualTo(2);
         }
         // the last word: compact the file, and leave it with no free page
         try (var connection = DriverManager.getConnection(url())) {

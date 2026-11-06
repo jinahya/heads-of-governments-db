@@ -82,7 +82,7 @@ the `.txt` in the build, as the `.asv` and the database are.
 
 ## The schema
 
-Two tables, `office` (`WITHOUT ROWID`) and `head` (a rowid table). The DDL lives in
+Two tables, `office` and `head`, both `WITHOUT ROWID`. The DDL lives in
 `HeadsOfGovernments_Sqlite_Test.DDL` and is repeated in README.md, under *The database*, as SQL and
 as a Mermaid ERD; **a change to one is a change to both.**
 
@@ -96,20 +96,17 @@ saying the same thing.
 - `office` is the office the head of government holds -- 内閣総理大臣, 대통령, the Prime Minister --
   not an administration or a government. Key `country`, ISO 3166-1 alpha-2 as `Locale.getCountry()`
   returns it: the United Kingdom is `GB`. `head_kind` is `PRESIDENT` or `PRIME_MINISTER`, checked.
-- `head` is one term of office. Key `id INTEGER PRIMARY KEY`, the rowid, which SQLite assigns as the
-  generator inserts; the generator sorts by `country` then `term_start` first, so ids are 1..N in that
-  order, but the file is rebuilt on every run and an `id` is never stable. What tells terms apart is
-  `(country, term_start)`, not `(country, number)`: France and the United Kingdom keep a person's
-  number across terms, so `number` repeats. The unique index `uq_head_country_term_start` declares
-  it. Dates are ISO-8601 text, SQLite's convention. `term_end IS NULL` is the incumbent.
-- Indexes: `uq_head_country_term_start` on `(country, term_start)`, unique; `(country, number)`,
-  `(term_start)`, `(term_end)`, `(name)`, `(born)` and `(died)`, all plain.
+- `head` is one term of office. Key `(country, term_start)`, not `(country, number)`: France and the
+  United Kingdom keep a person's number across terms, so `number` repeats. There is no surrogate
+  key; the generator inserts in key order, so a run is reproducible. Dates are ISO-8601 text,
+  SQLite's convention. `term_end IS NULL` is the incumbent.
+- Indexes: `(country, number)`, `(term_start)`, `(term_end)`, `(name)`, `(born)` and `(died)`, all plain.
   There is no unique index on the incumbent, by decision: the schema is for consumers, and the
   generator asserts one incumbent per office after the inserts instead.
 
 Names are country codes and snake_case; keep them so. If a country ever contributes a second office
-(South Korea has a prime minister too), the key of `office` becomes `(country, head_kind)` and
-`head` references both columns; `id` is unaffected.
+(South Korea has a prime minister too), the key of `office` becomes `(country, head_kind)`,
+`head` references both columns, and its key becomes `(country, head_kind, term_start)`.
 
 ## The SQL files
 
