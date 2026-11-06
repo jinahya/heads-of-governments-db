@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Generates {@link #RESOURCE_NAME} under {@code src/main/resources} from the {@code .asv} resources, then reopens it
- * and checks it. The schema is documented in {@code db/heads_of_governments.sqlite3.md}; keep the two in step.
+ * and checks it. The schema is documented in {@code README.md}; keep the two in step.
  *
  * <p>The jar carries what {@code process-resources} copied before this test ran, which is the file as the previous
  * build left it. {@link #generate()} therefore fails when the two differ, so a build never passes with a stale jar:
@@ -65,7 +65,7 @@ class HeadsOfGovernments_Sqlite_Test {
                 CHECK (head_kind IN ('PRESIDENT', 'PRIME_MINISTER'))
             ) WITHOUT ROWID""",
             // id is the rowid, so SQLite assigns it; the generator inserts by country then term_start, so it is
-            // 1..N in that order. No uniqueness is declared on (country, term_start); generate() checks it instead.
+            // 1..N in that order. What tells terms apart is (country, term_start), which the unique index declares.
             """
             CREATE TABLE head (
                 -- one term of a head of government
@@ -81,6 +81,7 @@ class HeadsOfGovernments_Sqlite_Test {
                 CHECK (term_end IS NULL OR term_end >= term_start),
                 CHECK (died IS NULL OR died >= born)
             )""",
+            "CREATE UNIQUE INDEX uq_head_country_term_start ON head (country, term_start)",
             "CREATE INDEX idx_head_country_number ON head (country, number)",
             "CREATE INDEX idx_head_term_start ON head (term_start)",
             "CREATE INDEX idx_head_term_end ON head (term_end)",
@@ -206,8 +207,6 @@ class HeadsOfGovernments_Sqlite_Test {
             }
             assertThat(count(connection, "SELECT MIN(id) FROM head")).as("first id").isOne();
             assertThat(count(connection, "SELECT MAX(id) FROM head")).as("last id").isEqualTo(heads.size());
-            assertThat(count(connection, "SELECT COUNT(*) FROM (SELECT country, term_start FROM head GROUP BY 1, 2 HAVING COUNT(*) > 1)"))
-                    .as("(country, term_start) duplicates").isZero();
             assertThat(count(connection, "SELECT COUNT(*) FROM head WHERE term_end IS NULL"))
                     .as("incumbents").isEqualTo(5);
             assertThat(count(connection, "SELECT COUNT(*) FROM head WHERE country NOT IN (SELECT country FROM office)"))
@@ -216,6 +215,8 @@ class HeadsOfGovernments_Sqlite_Test {
             assertThat(count(connection, "SELECT COUNT(*) FROM sqlite_stat1")).as("ANALYZE ran").isPositive();
             assertThat(count(connection, "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name LIKE 'idx_head_%'"))
                     .as("indexes").isEqualTo(6);
+            assertThat(count(connection, "SELECT COUNT(*) FROM pragma_index_list('head') WHERE \"unique\""))
+                    .as("unique indexes on head").isOne();
         }
         // the last word: compact the file, and leave it with no free page
         try (var connection = DriverManager.getConnection(url())) {
