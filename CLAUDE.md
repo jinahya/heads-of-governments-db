@@ -5,11 +5,12 @@ Guidance for Claude Code when working in this repository.
 ## What this project is
 
 A generator of one resource. `./mvnw test` reads the lists under `src/test/resources` and
-writes `src/main/resources/com/github/jinahya/headsofgovernments/heads_of_governments.sqlite3`, an
-SQLite database of the heads of government of five countries. The jar carries that file and nothing else: there is no main source and
-no runtime dependency. A consumer brings `sqlite-jdbc` and opens it with
-`jdbc:sqlite::resource:com/github/jinahya/headsofgovernments/heads_of_governments.sqlite3`. The
-schema is the contract; each release replaces the whole file.
+writes `src/main/resources/heads_of_governments.sqlite3`, an SQLite database of the heads of
+government of five countries. The file sits at the root of the classpath, not under a package
+directory. The jar carries that file and nothing else: there is no main source and no runtime
+dependency. A consumer brings `sqlite-jdbc` and opens it with
+`jdbc:sqlite::resource:heads_of_governments.sqlite3`. The schema is the contract; each release
+replaces the whole file.
 
 **It is chicken and egg, by design.** `process-resources` copies the committed database into
 `target/classes` before the tests regenerate it, so a jar carries the file as the previous build left
@@ -24,7 +25,7 @@ The sibling `../kftc-financial-institution-info` was the model for this, down to
 ## Layout
 
 ```
-src/main/resources/com/github/jinahya/headsofgovernments/
+src/main/resources/
   heads_of_governments.sqlite3                         the output, and all the jar holds; committed
 src/test/resources/
   list_of_offices.txt                                  the five offices, hand-edited
@@ -144,7 +145,7 @@ sets `PRAGMA auto_vacuum = NONE`, runs `ANALYZE` after the inserts, reopens the 
 counts, incumbents, foreign keys and the indexes, and ends with `VACUUM`, so the file is compact. Inspect the result with the `sqlite3` tool:
 
 ```sh
-sqlite3 src/main/resources/com/github/jinahya/headsofgovernments/heads_of_governments.sqlite3 \
+sqlite3 src/main/resources/heads_of_governments.sqlite3 \
   '.schema' 'SELECT country, name FROM head WHERE term_end IS NULL'
 ```
 

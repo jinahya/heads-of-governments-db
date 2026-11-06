@@ -44,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class HeadsOfGovernments_Sqlite_Test {
 
     /** The database's name as a classpath resource; what a consumer opens with {@code jdbc:sqlite::resource:}. */
-    static final String RESOURCE_NAME = "com/github/jinahya/headsofgovernments/heads_of_governments.sqlite3";
+    static final String RESOURCE_NAME = "heads_of_governments.sqlite3";
 
     /** The file to generate, relative to the project directory, which is where surefire runs. */
     static final Path PATH = Path.of("src", "main", "resources").resolve(RESOURCE_NAME);

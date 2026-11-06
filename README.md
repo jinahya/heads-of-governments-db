@@ -6,7 +6,7 @@ from hand-maintained text lists, and ships it in a jar as a classpath resource.
 
 ```sh
 $ ./mvnw test
-$ sqlite3 src/main/resources/com/github/jinahya/headsofgovernments/heads_of_governments.sqlite3 \
+$ sqlite3 src/main/resources/heads_of_governments.sqlite3 \
     'SELECT country, number, name, term_start FROM head WHERE term_end IS NULL'
 FR|25|Emmanuel Macron|2022-05-14
 GB|59|Andy Burnham|2026-07-20
@@ -33,7 +33,7 @@ the database as a resource; `sqlite-jdbc` extracts it to a temporary file and op
 
 ```java
 try (var connection = DriverManager.getConnection(
-        "jdbc:sqlite::resource:com/github/jinahya/headsofgovernments/heads_of_governments.sqlite3")) {
+        "jdbc:sqlite::resource:heads_of_governments.sqlite3")) {
     ...
 }
 ```
@@ -42,7 +42,7 @@ Each release replaces the whole file; the schema below is the contract.
 
 ## The database
 
-`src/main/resources/com/github/jinahya/headsofgovernments/heads_of_governments.sqlite3`, two tables.
+`src/main/resources/heads_of_governments.sqlite3`, two tables.
 
 | table    | rows | one row is                                                                |
 |----------|-----:|---------------------------------------------------------------------------|
