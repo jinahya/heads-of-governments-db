@@ -75,6 +75,7 @@ CREATE TABLE head (
     CHECK (died IS NULL OR died >= born)
 );
 
+CREATE UNIQUE INDEX uq_head_country_term_start ON head (country, term_start);
 CREATE INDEX idx_head_country_number ON head (country, number);
 CREATE INDEX idx_head_term_start ON head (term_start);
 CREATE INDEX idx_head_term_end ON head (term_end);
@@ -83,24 +84,83 @@ CREATE INDEX idx_head_born ON head (born);
 CREATE INDEX idx_head_died ON head (died);
 ```
 
-A term is told apart by `(country, term_start)`; the generator checks that no pair repeats, though
-the schema declares no constraint on it. `number` could not serve, because it means something
-different in each country -- Japan counts appointments, South Korea elections, the United States
-presidencies, France and the United Kingdom persons -- and the last two repeat it across a person's
-terms. `office.numbering` spells out each country's rule. `id` is the rowid, numbered by country
-and then by date as the generator inserts; the file is rebuilt on every run, so do not store an `id`
-anywhere outside the file. The schema declares no uniqueness beyond `id`; the generator checks the
-data once, at build time.
-Dates are text, SQLite's own convention, so this finds who held office on a day:
+### The diagram
+
+```mermaid
+erDiagram
+    office ||--o{ head : "is held by"
+
+    office {
+        TEXT    country    PK "ISO 3166-1 alpha-2, as Locale.getCountry() returns it"
+        TEXT    head_kind     "PRESIDENT or PRIME_MINISTER, checked"
+        TEXT    head_title    "the head's title in the country's own language"
+        TEXT    numbering     "what head.number counts for this country"
+    }
+
+    head {
+        INTEGER id         PK "the rowid; assigned by the generator, not stable across runs"
+        TEXT    country    FK, UK "references office (country); unique with term_start"
+        INTEGER number        "the term number, counted as office.numbering says"
+        TEXT    term_start UK "ISO 8601 calendar date (yyyy-MM-dd); unique with country"
+        TEXT    term_end      "ISO 8601 calendar date (yyyy-MM-dd); NULL for the incumbent"
+        TEXT    name          "the person's name, in the source's script"
+        TEXT    party         "one token; / separates successive parties"
+        INTEGER born          "the year of birth"
+        INTEGER died          "the year of death; NULL while living"
+    }
+```
+
+The crow's foot is what the schema declares: a head belongs to exactly one office, and nothing stops
+an office from having no head. `UK` marks `(country, term_start)`, which a unique index declares. The
+generator asserts the rest after the inserts -- every office has at least one term, and exactly one
+with `term_end IS NULL` -- so the file as built is stricter than the diagram.
+
+### `office`
+
+The office the head of government holds -- 内閣総理大臣, 대통령, Président de la République -- which is
+permanent and has one holder at a time. One row per country.
+
+| name         | description                                                     | notes                              |
+|--------------|-----------------------------------------------------------------|------------------------------------|
+| `country`    | ISO 3166-1 alpha-2 code, as `java.util.Locale#getCountry()`     | `FR`, `GB`, `JP`, `KR`, `US`       |
+| `head_kind`  | what the head of this office is                                 | `PRESIDENT` or `PRIME_MINISTER`    |
+| `head_title` | the head's title in the country's own language                  | e.g. `内閣総理大臣`                  |
+| `numbering`  | what `head.number` counts for this country                      | free text                          |
+
+### `head`
+
+One term of a head of government. `id` is the key, a surrogate: it is the rowid, numbered by country
+and then by date as the generator inserts, and the file is rebuilt on every run, so an `id` is not
+stable across runs or releases; do not store one anywhere outside the file. A term is told apart by
+`(country, term_start)`, which the unique index `uq_head_country_term_start` declares. `number` could
+not serve, because it means something different in each country -- Japan counts appointments, South
+Korea elections, the United States presidencies, France and the United Kingdom persons -- and the
+last two repeat it across a person's terms. `office.numbering` spells out each country's rule.
+
+| name         | description                                   | notes                                        |
+|--------------|-----------------------------------------------|----------------------------------------------|
+| `id`         | the row's key                                 | rowid; 1..285 by `country`, then `term_start`, in this run |
+| `country`    | the office's country                          | references `office`                          |
+| `number`     | the term number                               | counted as `office.numbering` says           |
+| `term_start` | the first day of the term                     | ISO-8601 date, `yyyy-MM-dd`; unique per `country` |
+| `term_end`   | the last day of the term                      | ISO-8601 date; `NULL` for the incumbent      |
+| `name`       | the person's name                             | in the source's script                       |
+| `party`      | the party                                     | one token; `/` separates successive parties  |
+| `born`       | the year of birth                             |                                              |
+| `died`       | the year of death                             | `NULL` while living                          |
+
+Beyond `id`, the schema declares one uniqueness, `(country, term_start)`. It declares none on the
+incumbent, by decision: the file is built for its readers, and the generator checks the data once, at
+build time, that each office has exactly one row with `term_end IS NULL`.
+
+Dates are text, SQLite's own convention, so `date()` and `julianday()` work on them directly, and this
+finds who held office on a day:
 
 ```sql
 SELECT country, name FROM head
 WHERE term_start <= '1990-01-01' AND (term_end IS NULL OR term_end >= '1990-01-01');
 ```
 
-![The two tables and the one relationship between them](db/erd/all.svg)
-
-Column by column: [db/heads_of_governments.sqlite3.md](db/heads_of_governments.sqlite3.md).
 Queries to profile each table, and exercises on them, are under [src/test/sql](src/test/sql).
 
 ## The data

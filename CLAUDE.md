@@ -39,16 +39,12 @@ src/test/java/com/github/jinahya/headsofgovernments/
   Office.java, Head.java                               records, one per table, each with from(String[])
   _Asv_Test.java                                       the .asv files are current and parse as expected
   HeadsOfGovernments_Sqlite_Test.java                  the generator; holds the DDL
-  HeadsOfGovernments_Erd_Test.java                     draws the ERD .svg files from the DDL
   HeadsOfGovernments_Resource_Test.java                opens the database as a consumer does, via :resource:
 src/test/sql/
   office.sql, head.sql                                 profiling queries, a section per column
   office_exercises.sql, head_exercises.sql             exercises on one table, Basic / Intermediate / Advanced
   whole_schema_exercises.sql                           exercises that read both tables
-db/
-  heads_of_governments.sqlite3.md                      the schema, a Mermaid ERD and column notes; committed
-  erd/all.svg                                          the ERD as an image; generated, committed
-  erd/office.svg, erd/head.svg                         one table alone; generated, committed
+README.md                                              also the schema: SQL, a Mermaid ERD and column notes
 ```
 
 ## The data files, and which one is the truth
@@ -87,17 +83,15 @@ the `.txt` in the build, as the `.asv` and the database are.
 ## The schema
 
 Two tables, `office` (`WITHOUT ROWID`) and `head` (a rowid table). The DDL lives in
-`HeadsOfGovernments_Sqlite_Test.DDL` and is repeated in `db/heads_of_governments.sqlite3.md`, as SQL and
-as a Mermaid ERD; **a change to one is a change to both.** The images under `db/erd` are not a third
-copy: `HeadsOfGovernments_Erd_Test` draws them from the DDL on every build, through the `PRAGMA`s of
-an in-memory database, so they only need committing.
+`HeadsOfGovernments_Sqlite_Test.DDL` and is repeated in README.md, under *The database*, as SQL and
+as a Mermaid ERD; **a change to one is a change to both.**
 
 Every table and column carries a `--` comment in the DDL. SQLite has no `COMMENT ON`, but it stores
-the statement's text verbatim in `sqlite_master.sql`, so the comments ship in the file, `.schema`
-shows them, and the ERD generator reads them from there: a line that is only a comment, first inside
-the parentheses, is the table's; a comment on a column's line is the column's. Keep a comment short
-enough that the line stays within 120 in the Java source, and keep the column notes in the schema
-notes saying the same thing.
+the statement's text verbatim in `sqlite_master.sql`, so the comments ship in the file and `.schema`
+shows them: a line that is only a comment, first inside the parentheses, is the table's; a comment on
+a column's line is the column's. Keep a comment short
+enough that the line stays within 120 in the Java source, and keep the column notes in README.md
+saying the same thing.
 
 - `office` is the office the head of government holds -- 内閣総理大臣, 대통령, the Prime Minister --
   not an administration or a government. Key `country`, ISO 3166-1 alpha-2 as `Locale.getCountry()`
@@ -106,10 +100,10 @@ notes saying the same thing.
   generator inserts; the generator sorts by `country` then `term_start` first, so ids are 1..N in that
   order, but the file is rebuilt on every run and an `id` is never stable. What tells terms apart is
   `(country, term_start)`, not `(country, number)`: France and the United Kingdom keep a person's
-  number across terms, so `number` repeats. The schema declares no unique constraint on
-  `(country, term_start)`, by decision; the generator asserts it after the inserts instead. Dates are
-  ISO-8601 text, SQLite's convention. `term_end IS NULL` is the incumbent.
-- Indexes: `(country, number)`, `(term_start)`, `(term_end)`, `(name)`, `(born)` and `(died)`, all plain.
+  number across terms, so `number` repeats. The unique index `uq_head_country_term_start` declares
+  it. Dates are ISO-8601 text, SQLite's convention. `term_end IS NULL` is the incumbent.
+- Indexes: `uq_head_country_term_start` on `(country, term_start)`, unique; `(country, number)`,
+  `(term_start)`, `(term_end)`, `(name)`, `(born)` and `(died)`, all plain.
   There is no unique index on the incumbent, by decision: the schema is for consumers, and the
   generator asserts one incumbent per office after the inserts instead.
 
@@ -170,5 +164,5 @@ only dependency with native code; it loads its own library and needs nothing ins
 - Test classes are package-private and named `Xxx_Test`; internal helpers carry a leading
   underscore (`_Asv`). Record types are named for what a row is (`Office`, `Head`).
 - Every Java file carries the Apache 2.0 header in the `#%L` form the license plugin produces.
-- Prose about the data (README.md, the schema notes) is English; data values keep the script of
+- Prose about the data (README.md) is English; data values keep the script of
   their source (`内閣総理大臣`, `대통령`, `Président de la République`).
