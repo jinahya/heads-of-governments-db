@@ -39,6 +39,7 @@ class HeadsOfGovernments_Resource_Test {
             assertThat(count(connection, "SELECT COUNT(*) FROM office")).isEqualTo(5);
             assertThat(count(connection, "SELECT COUNT(*) FROM head WHERE term_end IS NULL"))
                     .as("incumbents").isEqualTo(5);
+            assertThat(count(connection, "SELECT COUNT(*) FROM incumbent")).as("incumbent rows").isEqualTo(5);
         }
     }
 }

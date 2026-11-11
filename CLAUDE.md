@@ -43,6 +43,7 @@ src/test/java/com/github/jinahya/headsofgovernments/
   HeadsOfGovernments_Resource_Test.java                opens the database as a consumer does, via :resource:
 src/test/sql/
   office.sql, head.sql                                 profiling queries, a section per column
+  incumbent.sql, contemporary.sql                      profiling queries on the views
   office_exercises.sql, head_exercises.sql             exercises on one table, Basic / Intermediate / Advanced
   whole_schema_exercises.sql                           exercises that read both tables
 README.md                                              also the schema: SQL, a Mermaid ERD and column notes
@@ -83,14 +84,15 @@ the `.txt` in the build, as the `.asv` and the database are.
 
 ## The schema
 
-Two tables, `office` and `head`, both `WITHOUT ROWID`. The DDL lives in
+Two tables, `office` and `head`, both `WITHOUT ROWID`, and two views over them. The DDL lives in
 `HeadsOfGovernments_Sqlite_Test.DDL` and is repeated in README.md, under *The database*, as SQL and
 as a Mermaid ERD; **a change to one is a change to both.**
 
 Every table and column carries a `--` comment in the DDL. SQLite has no `COMMENT ON`, but it stores
 the statement's text verbatim in `sqlite_master.sql`, so the comments ship in the file and `.schema`
 shows them: a line that is only a comment, first inside the parentheses, is the table's; a comment on
-a column's line is the column's. Keep a comment short
+a column's line is the column's. A view names its columns in a list, `CREATE VIEW v (a, b) AS`, so
+its comments sit the same way. Keep a comment short
 enough that the line stays within 120 in the Java source, and keep the column notes in README.md
 saying the same thing.
 
@@ -104,6 +106,13 @@ saying the same thing.
 - Indexes: `(country, number)`, `(term_start)`, `(term_end)`, `(name)`, `(born)` and `(died)`, all plain.
   There is no unique index on the incumbent, by decision: the schema is for consumers, and the
   generator asserts one incumbent per office after the inserts instead.
+- `incumbent` is each office's head today, one row per country. `country` identifies a row, so a
+  consumer may map it as a read-only `@Entity`; SQLite cannot declare that, so the generator asserts
+  it. Keep it so: a change that could give an office two rows breaks every such mapping.
+- `contemporary` is every two terms in different countries that overlapped, `country_a < country_b`,
+  with the span they shared. It has no identity, by design: it is read as a projection.
+- A view stays deterministic: nothing from `date('now')` or the like, so a query on the file answers
+  the same whenever it runs.
 
 Names are country codes and snake_case; keep them so. If a country ever contributes a second office
 (South Korea has a prime minister too), the key of `office` becomes `(country, head_kind)`,
@@ -142,7 +151,7 @@ and 25 for the tests, which are the generator. The enforcer requires Java 25.
 
 The generator deletes any previous database before writing, so the file holds exactly one run. It
 sets `PRAGMA auto_vacuum = NONE`, runs `ANALYZE` after the inserts, reopens the file and checks row
-counts, incumbents, foreign keys and the indexes, and ends with `VACUUM`, so the file is compact. Inspect the result with the `sqlite3` tool:
+counts, incumbents, foreign keys, the indexes and the views, and ends with `VACUUM`, so the file is compact. Inspect the result with the `sqlite3` tool:
 
 ```sh
 sqlite3 src/main/resources/heads_of_governments.sqlite3 \

@@ -42,12 +42,14 @@ Each release replaces the whole file; the schema below is the contract.
 
 ## The database
 
-`src/main/resources/heads_of_governments.sqlite3`, two tables.
+`src/main/resources/heads_of_governments.sqlite3`, two tables and two views.
 
-| table    | rows | one row is                                                                |
-|----------|-----:|---------------------------------------------------------------------------|
-| `office` |    5 | the office the head of government holds, keyed by ISO 3166-1 alpha-2 code |
-| `head`   |  285 | one term of office, keyed by `(country, term_start)`                      |
+| table or view  | rows | one row is                                                                |
+|----------------|-----:|---------------------------------------------------------------------------|
+| `office`       |    5 | the office the head of government holds, keyed by ISO 3166-1 alpha-2 code |
+| `head`         |  285 | one term of office, keyed by `(country, term_start)`                      |
+| `incumbent`    |    5 | an office's head today, identified by `country`                           |
+| `contemporary` |  822 | two terms in different countries that overlapped; no identity            |
 
 ```sql
 CREATE TABLE office (
@@ -80,6 +82,42 @@ CREATE INDEX idx_head_term_end ON head (term_end);
 CREATE INDEX idx_head_name ON head (name);
 CREATE INDEX idx_head_born ON head (born);
 CREATE INDEX idx_head_died ON head (died);
+
+CREATE VIEW incumbent (
+    -- the head of each office today; one row per country, so country identifies a row
+    country,       -- the office's country
+    head_kind,     -- PRESIDENT or PRIME_MINISTER
+    head_title,    -- the head's title, in the country's language
+    number,        -- the term number, as office.numbering says
+    term_start,    -- ISO-8601 date, yyyy-MM-dd
+    name,          -- the person's name, in the source's script
+    party,         -- one token; / separates successive parties
+    born           -- the year of birth
+) AS
+SELECT o.country, o.head_kind, o.head_title, h.number, h.term_start, h.name, h.party, h.born
+FROM office o
+         JOIN head h ON h.country = o.country AND h.term_end IS NULL;
+
+CREATE VIEW contemporary (
+    -- two terms in different countries that overlapped, a row per pair; no column identifies a row
+    country_a,     -- the first term's country, before country_b
+    name_a,        -- the first term's head
+    country_b,     -- the second term's country
+    name_b,        -- the second term's head
+    overlap_start, -- ISO-8601 date; the first day both held office
+    overlap_end    -- ISO-8601 date; the last day both held office; NULL while both do
+) AS
+SELECT a.country, a.name, b.country, b.name,
+       max(a.term_start, b.term_start),
+       CASE
+           WHEN a.term_end IS NULL THEN b.term_end
+           WHEN b.term_end IS NULL THEN a.term_end
+           ELSE min(a.term_end, b.term_end)
+           END
+FROM head a
+         JOIN head b ON b.country > a.country
+    AND b.term_start <= coalesce(a.term_end, '9999-12-31')
+    AND a.term_start <= coalesce(b.term_end, '9999-12-31');
 ```
 
 ### The diagram
@@ -87,6 +125,8 @@ CREATE INDEX idx_head_died ON head (died);
 ```mermaid
 erDiagram
     office ||--o{ head : "is held by"
+    office ||..|| incumbent : "is held today by"
+    head }o..o{ contemporary : "overlaps, in pairs"
 
     office {
         TEXT    country    PK "ISO 3166-1 alpha-2, as Locale.getCountry() returns it"
@@ -105,12 +145,34 @@ erDiagram
         INTEGER born          "the year of birth"
         INTEGER died          "the year of death; NULL while living"
     }
+
+    incumbent {
+        TEXT    country    PK "the office's country; identifies a row, by the generator's check"
+        TEXT    head_kind     "PRESIDENT or PRIME_MINISTER"
+        TEXT    head_title    "the head's title in the country's own language"
+        INTEGER number        "the term number, counted as office.numbering says"
+        TEXT    term_start    "ISO 8601 calendar date (yyyy-MM-dd)"
+        TEXT    name          "the person's name, in the source's script"
+        TEXT    party         "one token; / separates successive parties"
+        INTEGER born          "the year of birth"
+    }
+
+    contemporary {
+        TEXT    country_a     "the first term's country, before country_b"
+        TEXT    name_a        "the first term's head"
+        TEXT    country_b     "the second term's country"
+        TEXT    name_b        "the second term's head"
+        TEXT    overlap_start "ISO 8601 calendar date; the first day both held office"
+        TEXT    overlap_end   "ISO 8601 calendar date; the last day both held office; NULL while both do"
+    }
 ```
 
 The crow's foot is what the schema declares: a head belongs to exactly one office, and nothing stops
 an office from having no head. `PK` on two columns of `head` marks its composite key. The
 generator asserts the rest after the inserts -- every office has at least one term, and exactly one
-with `term_end IS NULL` -- so the file as built is stricter than the diagram.
+with `term_end IS NULL` -- so the file as built is stricter than the diagram. The dotted lines are
+the views, which store nothing; `PK` on `incumbent.country` is the generator's guarantee, not a
+declaration, since SQLite gives a view no key.
 
 ### `office`
 
@@ -156,7 +218,55 @@ SELECT country, name FROM head
 WHERE term_start <= '1990-01-01' AND (term_end IS NULL OR term_end >= '1990-01-01');
 ```
 
-Queries to profile each table, and exercises on them, are under [src/test/sql](src/test/sql).
+### `incumbent`
+
+A view: each office's head today, with the office's kind and title, one row per country. `country`
+identifies a row -- the generator asserts it -- so the view maps as a read-only entity:
+
+```java
+@Entity
+@Immutable // org.hibernate.annotations; or map it read-only by your provider's means
+@Table(name = "incumbent")
+class Incumbent {
+    @Id String country;
+    String headKind, headTitle, name, party, termStart;
+    int number, born;
+}
+```
+
+SQLite reports no primary key for a view, so leave schema generation and validation off for it.
+
+| name         | description                                     | notes                                   |
+|--------------|-------------------------------------------------|-----------------------------------------|
+| `country`    | the office's country                            | identifies a row                        |
+| `head_kind`  | what the head of this office is                 | `PRESIDENT` or `PRIME_MINISTER`         |
+| `head_title` | the head's title in the country's own language  |                                         |
+| `number`     | the term number                                 | counted as `office.numbering` says      |
+| `term_start` | the first day of the term                       | ISO-8601 date, `yyyy-MM-dd`             |
+| `name`       | the person's name                               | in the source's script                  |
+| `party`      | the party                                       | one token; `/` separates successive parties |
+| `born`       | the year of birth                               |                                         |
+
+### `contemporary`
+
+A view: every two terms, in different countries, that overlapped, with the span they shared -- who
+was Japan's prime minister while Reagan was president. Each pair appears once, `country_a` sorting
+before `country_b`. A term's days are inclusive, as in `head`, so a handover day counts for both the
+outgoing and the incoming head.
+
+Nothing identifies a row: two heads can share a name, and a person's terms are separate rows. Read it
+as a projection -- a record, a DTO, a constructor expression -- not as an entity.
+
+| name            | description                            | notes                                      |
+|-----------------|----------------------------------------|--------------------------------------------|
+| `country_a`     | the first term's country               | sorts before `country_b`                   |
+| `name_a`        | the first term's head                  |                                            |
+| `country_b`     | the second term's country              |                                            |
+| `name_b`        | the second term's head                 |                                            |
+| `overlap_start` | the first day both held office         | ISO-8601 date                              |
+| `overlap_end`   | the last day both held office          | ISO-8601 date; `NULL` while both are in office |
+
+Queries to profile each table and view, and exercises on them, are under [src/test/sql](src/test/sql).
 
 ## The data
 
@@ -245,7 +355,7 @@ sentence, the rule for `number` given above.
 A JUnit test is the generator. `HeadsOfGovernments_Sqlite_Test` parses the `.asv` files, deletes any
 previous database, creates the schema, inserts everything in one transaction with foreign keys on,
 runs `ANALYZE`, then reopens the file and checks it: row counts per country, five incumbents, no
-orphans, the indexes present. `VACUUM` is the last step, so the file ships compact. `_Asv_Test` checks the inputs first. The only
+orphans, the indexes and views present, one `incumbent` per office. `VACUUM` is the last step, so the file ships compact. `_Asv_Test` checks the inputs first. The only
 dependencies are JUnit, AssertJ and [sqlite-jdbc](https://github.com/xerial/sqlite-jdbc), all in
 test scope.
 

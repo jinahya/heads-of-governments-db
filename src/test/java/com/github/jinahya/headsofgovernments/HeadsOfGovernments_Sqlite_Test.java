@@ -85,7 +85,45 @@ class HeadsOfGovernments_Sqlite_Test {
             "CREATE INDEX idx_head_term_end ON head (term_end)",
             "CREATE INDEX idx_head_name ON head (name)",
             "CREATE INDEX idx_head_born ON head (born)",
-            "CREATE INDEX idx_head_died ON head (died)"
+            "CREATE INDEX idx_head_died ON head (died)",
+            // identified by country, as office is; the generator asserts one row per office
+            """
+            CREATE VIEW incumbent (
+                -- the head of each office today; one row per country, so country identifies a row
+                country,       -- the office's country
+                head_kind,     -- PRESIDENT or PRIME_MINISTER
+                head_title,    -- the head's title, in the country's language
+                number,        -- the term number, as office.numbering says
+                term_start,    -- ISO-8601 date, yyyy-MM-dd
+                name,          -- the person's name, in the source's script
+                party,         -- one token; / separates successive parties
+                born           -- the year of birth
+            ) AS
+            SELECT o.country, o.head_kind, o.head_title, h.number, h.term_start, h.name, h.party, h.born
+            FROM office o
+                     JOIN head h ON h.country = o.country AND h.term_end IS NULL""",
+            // declares no key; a consumer reads it as a projection, not as an entity
+            """
+            CREATE VIEW contemporary (
+                -- two terms in different countries that overlapped, a row per pair; no column identifies a row
+                country_a,     -- the first term's country, before country_b
+                name_a,        -- the first term's head
+                country_b,     -- the second term's country
+                name_b,        -- the second term's head
+                overlap_start, -- ISO-8601 date; the first day both held office
+                overlap_end    -- ISO-8601 date; the last day both held office; NULL while both do
+            ) AS
+            SELECT a.country, a.name, b.country, b.name,
+                   max(a.term_start, b.term_start),
+                   CASE
+                       WHEN a.term_end IS NULL THEN b.term_end
+                       WHEN b.term_end IS NULL THEN a.term_end
+                       ELSE min(a.term_end, b.term_end)
+                       END
+            FROM head a
+                     JOIN head b ON b.country > a.country
+                AND b.term_start <= coalesce(a.term_end, '9999-12-31')
+                AND a.term_start <= coalesce(b.term_end, '9999-12-31')"""
     );
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -216,6 +254,16 @@ class HeadsOfGovernments_Sqlite_Test {
             assertThat(count(connection, "SELECT COUNT(*) FROM pragma_table_info('head') "
                                          + "WHERE pk = 1 AND name = 'country' OR pk = 2 AND name = 'term_start'"))
                     .as("primary key of head is (country, term_start)").isEqualTo(2);
+            assertThat(count(connection, "SELECT COUNT(*) FROM sqlite_master WHERE type = 'view'"))
+                    .as("views").isEqualTo(2);
+            assertThat(count(connection, "SELECT COUNT(*) FROM incumbent")).as("incumbent rows").isEqualTo(5);
+            assertThat(count(connection, "SELECT COUNT(DISTINCT country) FROM incumbent"))
+                    .as("incumbent is identified by country").isEqualTo(5);
+            assertThat(count(connection, "SELECT COUNT(*) FROM contemporary")).as("contemporary rows").isPositive();
+            assertThat(count(connection, "SELECT COUNT(*) FROM contemporary WHERE overlap_end < overlap_start"))
+                    .as("contemporary overlaps ending before they start").isZero();
+            assertThat(count(connection, "SELECT COUNT(*) FROM contemporary WHERE overlap_end IS NULL"))
+                    .as("pairs of incumbents").isEqualTo(10);
         }
         // the last word: compact the file, and leave it with no free page
         try (var connection = DriverManager.getConnection(url())) {
