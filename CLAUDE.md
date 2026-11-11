@@ -109,8 +109,8 @@ saying the same thing.
 - `incumbent` is each office's head today, one row per country. `country` identifies a row, so a
   consumer may map it as a read-only `@Entity`; SQLite cannot declare that, so the generator asserts
   it. Keep it so: a change that could give an office two rows breaks every such mapping.
-- `contemporary` is every two terms in different countries that overlapped, `country_a < country_b`,
-  with the span they shared. It has no identity, by design: it is read as a projection.
+- `contemporary` is every two terms in different countries that overlapped,
+  `country_left < country_right`, with the span they shared. It has no identity, by design: it is read as a projection.
 - A view stays deterministic: nothing from `date('now')` or the like, so a query on the file answers
   the same whenever it runs.
 

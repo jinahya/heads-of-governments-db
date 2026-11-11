@@ -20,7 +20,7 @@
 -- Profiling queries on the view contemporary. Each says what it looks for and what the result should be; 'no rows'
 -- marks a check that passes when nothing comes back.
 --
--- CREATE VIEW contemporary (country_a, name_a, country_b, name_b, overlap_start, overlap_end) AS
+-- CREATE VIEW contemporary (country_left, name_left, country_right, name_right, overlap_start, overlap_end) AS
 -- SELECT ... FROM head a JOIN head b ON b.country > a.country AND the two terms overlap
 --
 -- Run the file as a whole, from the project directory:
@@ -29,19 +29,19 @@
 --
 
 
--- ------------------------------------------------------------------------------------------------ country_a, country_b
+-- ----------------------------------------------------------------------------------------- country_left, country_right
 -- how many pairs each two countries contribute; ten pairs of countries, all with some.
-SELECT country_a, country_b, COUNT(*) AS pairs
+SELECT country_left, country_right, COUNT(*) AS pairs
 FROM contemporary
-GROUP BY country_a, country_b
-ORDER BY country_a ASC, country_b ASC
+GROUP BY country_left, country_right
+ORDER BY country_left ASC, country_right ASC
 ;
 
--- each pair is written once, country_a before country_b.
+-- each pair is written once, country_left before country_right.
 -- no rows: no pair is written the other way round, or within one country.
-SELECT country_a, country_b
+SELECT country_left, country_right
 FROM contemporary
-WHERE country_a >= country_b
+WHERE country_left >= country_right
 ;
 
 
@@ -54,14 +54,14 @@ WHERE overlap_end < overlap_start
 ;
 
 -- overlap_end is NULL only while both heads are in office: one row per two incumbents, ten in all.
-SELECT country_a, name_a, country_b, name_b, overlap_start
+SELECT country_left, name_left, country_right, name_right, overlap_start
 FROM contemporary
 WHERE overlap_end IS NULL
-ORDER BY country_a ASC, country_b ASC
+ORDER BY country_left ASC, country_right ASC
 ;
 
 -- the longest overlaps.
-SELECT country_a, name_a, country_b, name_b, overlap_start, overlap_end,
+SELECT country_left, name_left, country_right, name_right, overlap_start, overlap_end,
        julianday(overlap_end) - julianday(overlap_start) + 1 AS days
 FROM contemporary
 WHERE overlap_end IS NOT NULL
@@ -73,8 +73,8 @@ LIMIT 10
 -- ---------------------------------------------------------------------------------------------------------------------
 -- nothing identifies a row, but no row should repeat either.
 -- no rows: every row is distinct.
-SELECT country_a, name_a, country_b, name_b, overlap_start, overlap_end, COUNT(*)
+SELECT country_left, name_left, country_right, name_right, overlap_start, overlap_end, COUNT(*)
 FROM contemporary
-GROUP BY country_a, name_a, country_b, name_b, overlap_start, overlap_end
+GROUP BY country_left, name_left, country_right, name_right, overlap_start, overlap_end
 HAVING COUNT(*) > 1
 ;

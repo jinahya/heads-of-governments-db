@@ -106,10 +106,10 @@ class HeadsOfGovernments_Sqlite_Test {
             """
             CREATE VIEW contemporary (
                 -- two terms in different countries that overlapped, a row per pair; no column identifies a row
-                country_a,     -- the first term's country, before country_b
-                name_a,        -- the first term's head
-                country_b,     -- the second term's country
-                name_b,        -- the second term's head
+                country_left,  -- the first term's country, before country_right
+                name_left,     -- the first term's head
+                country_right, -- the second term's country
+                name_right,    -- the second term's head
                 overlap_start, -- ISO-8601 date; the first day both held office
                 overlap_end    -- ISO-8601 date; the last day both held office; NULL while both do
             ) AS

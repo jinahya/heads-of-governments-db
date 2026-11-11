@@ -100,10 +100,10 @@ FROM office o
 
 CREATE VIEW contemporary (
     -- two terms in different countries that overlapped, a row per pair; no column identifies a row
-    country_a,     -- the first term's country, before country_b
-    name_a,        -- the first term's head
-    country_b,     -- the second term's country
-    name_b,        -- the second term's head
+    country_left,  -- the first term's country, before country_right
+    name_left,     -- the first term's head
+    country_right, -- the second term's country
+    name_right,    -- the second term's head
     overlap_start, -- ISO-8601 date; the first day both held office
     overlap_end    -- ISO-8601 date; the last day both held office; NULL while both do
 ) AS
@@ -158,10 +158,10 @@ erDiagram
     }
 
     contemporary {
-        TEXT    country_a     "the first term's country, before country_b"
-        TEXT    name_a        "the first term's head"
-        TEXT    country_b     "the second term's country"
-        TEXT    name_b        "the second term's head"
+        TEXT    country_left  "the first term's country, before country_right"
+        TEXT    name_left     "the first term's head"
+        TEXT    country_right "the second term's country"
+        TEXT    name_right    "the second term's head"
         TEXT    overlap_start "ISO 8601 calendar date; the first day both held office"
         TEXT    overlap_end   "ISO 8601 calendar date; the last day both held office; NULL while both do"
     }
@@ -250,19 +250,19 @@ SQLite reports no primary key for a view, so leave schema generation and validat
 ### `contemporary`
 
 A view: every two terms, in different countries, that overlapped, with the span they shared -- who
-was Japan's prime minister while Reagan was president. Each pair appears once, `country_a` sorting
-before `country_b`. A term's days are inclusive, as in `head`, so a handover day counts for both the
-outgoing and the incoming head.
+was Japan's prime minister while Reagan was president. Each pair appears once, `country_left`
+sorting before `country_right`. A term's days are inclusive, as in `head`, so a handover day counts
+for both the outgoing and the incoming head.
 
 Nothing identifies a row: two heads can share a name, and a person's terms are separate rows. Read it
 as a projection -- a record, a DTO, a constructor expression -- not as an entity.
 
 | name            | description                            | notes                                      |
 |-----------------|----------------------------------------|--------------------------------------------|
-| `country_a`     | the first term's country               | sorts before `country_b`                   |
-| `name_a`        | the first term's head                  |                                            |
-| `country_b`     | the second term's country              |                                            |
-| `name_b`        | the second term's head                 |                                            |
+| `country_left`  | the first term's country               | sorts before `country_right`               |
+| `name_left`     | the first term's head                  |                                            |
+| `country_right` | the second term's country              |                                            |
+| `name_right`    | the second term's head                 |                                            |
 | `overlap_start` | the first day both held office         | ISO-8601 date                              |
 | `overlap_end`   | the last day both held office          | ISO-8601 date; `NULL` while both are in office |
 
